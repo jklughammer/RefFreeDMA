@@ -2,6 +2,8 @@
 
 dir=$1
 
+echo 
+
 shopt -s extglob
 cd $dir
 rm -r  !(meta|unmapped_bam) 2>/dev/null
