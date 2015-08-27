@@ -9,8 +9,8 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 
 ####9 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
-2\. Download and extract the [test data set](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz):```tar -xzf RefFreeDMA_test.tar.gz```.
-3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): ```tar -xzf tools.tar.gz``` or manually install the required [external software](#external-software). 
+2\. Download and extract the [test data set](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz): `tar -xzf RefFreeDMA_test.tar.gz`
+3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software). 
 4\. Set the path to the downloaded working directory (RefFreeDMA_test) in the configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg).
 5\. Adjust the [tool paths](#set-tool-paths) in the configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg) or make sure all tools are in your PATH variable.
 6\. Install the required [python libraries](#python-libraries) if needed.
