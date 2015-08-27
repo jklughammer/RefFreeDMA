@@ -5,7 +5,7 @@ RefFreeDMA is a pipeline to perform genome-wide, high-resolution, differential m
 
 Quick start
 -----------
-__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file and the configuration file. RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh RefFreeDMA_test`. 
+__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file, and the configuration file. RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh RefFreeDMA_test`. 
 
 ####7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
@@ -118,7 +118,7 @@ samtools_path=$tool_path/samtools_1.2/bin/
 |nProcesses|1|Maximum number of allowed parallel processes for mapping and methylation calling.|
 |nameSeparator|"#"|Unique character(s) that separate flowdell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
 |maxReadLen|51|Actual maximum read letngth or if 3' croping is desired for, max length of read after cropping.|
-|maxSamples|`ls $bam_dir/*.bam|wc -l`|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
+|maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
 |filtLim|4|Only consider reads for the generation of the deduced genome that occur at least in 2 out of filtLim samples.|
 |cLimit|0.05|Minimum frequency of cytosines at a certain position in order to call a cytosine in the consensus sequence.
 |mapToSelf_filter|0.08|Only accept hits as true matches where the mismatch rate is <mapToSelf_filter|
@@ -131,7 +131,7 @@ wait_time=10
 nProcesses=1
 nameSeparator="#"
 maxReadLen=51
-maxSamples=`ls $bam_dir/*.bam|wc -l`
+maxSamples=`ls $working_dir/unmapped_bam/*.bam|wc -l`
 filtLim=4
 cLimit=0.05
 mapToSelf_filter=0.08
