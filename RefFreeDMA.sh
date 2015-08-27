@@ -24,6 +24,19 @@ mkdir -p $logdir
 biseq_path=$scripts/
 export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$PATH
 export PYTHONPATH=$tool_path/python2.7:$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
+
+#check if python libraries are there
+fail=0
+python -c 'import Bio' 2>/dev/null && echo "python Bio ... OK" || echo "python Bio ...  FAIL";fail=1
+python -c 'import pysam' 2>/dev/null && echo "python pysam ... OK" || echo "python pysam ...  FAIL";fail=1
+python -c 'import bitarray' 2>/dev/null && echo "python bitarray ... OK" || echo "python bitarray ...  FAIL";fail=1
+python -c 'import guppy' 2>/dev/null && echo "python guppy ... OK" || echo "python guppy ...  FAIL";fail=1
+
+if [ $fail -eq 1 ];then
+	echo Please install missing python libraries.
+	exit 0
+fi
+
 #-----------------------TOOLS_END----------------------------
 
 
