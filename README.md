@@ -7,46 +7,41 @@ Quick start
 -----------
 __Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file and the configuration file. RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh RefFreeDMA_test`. 
 
-####9 steps to test RefFreeDMA:
+####7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
 2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
 3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
-4\. Edit the test configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.
-5\. Install the required [python libraries](#python-libraries) if needed.
-6\. Install the required [R packages](#r-packages) if needed.  
-7\. Run RefFreeDMA.sh.
+4\. Edit the test configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.  
+5\. Install the required [R packages](#r-packages) if needed.  
+6\. Run RefFreeDMA.sh.  
 ```
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
-8\. View the most relevant results under PATH_TO_TESTDIR/RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth
+7\. View the most relevant results under RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth
 
 Dependencies
 ------------
 
 ###External software
+__*Tools*__  
 **SAMtools:** http://www.htslib.org/download/  
 **Picard Tools:** http://broadinstitute.github.io/picard/  
 **cutadapt:** https://code.google.com/p/cutadapt/  
 **trim_galore:** http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/  
 **Bowtie2:** http://bowtie-bio.sourceforge.net/bowtie2/index.shtml  
 **BSMAP:** https://code.google.com/p/bsmap/  
+__*Python libraries*__  
+**biopython:** http://biopython.org/DIST/biopython-1.63.zip  
+**bitarray:** https://pypi.python.org/packages/source/b/bitarray/bitarray-0.8.1.tar.gz  
+**guppy:** https://pypi.python.org/packages/source/g/guppy/guppy-0.1.10.tar.gz  
+**pysam:** https://code.google.com/p/pysam/downloads/detail?name=pysam-0.7.5.tar.gz  
+
 
 ###System requirements
 **Linux 64bit**  
 **bash:** http://www.gnu.org/software/bash/  
 **Python 2.7:** https://www.python.org/downloads/  
 **R/Rscript 3.1.2:** https://cran.r-project.org/  
-
-###Python libraries  
-**biopython:** http://biopython.org/DIST/biopython-1.63.zip  
-**bitarray:** https://pypi.python.org/packages/source/b/bitarray/bitarray-0.8.1.tar.gz  
-**guppy:** https://pypi.python.org/packages/source/g/guppy/guppy-0.1.10.tar.gz  
-**pysam:** https://code.google.com/p/pysam/downloads/detail?name=pysam-0.7.5.tar.gz  
-
-```
-#install locally (~/.local/lib/) with: 
-python2.7 setup.py install --user
-```
 
 ###R packages
 ```R
@@ -70,7 +65,7 @@ require(devtools)
 install_github("sheffien/simpleCache")
 ```
 ###Configuration file
-The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-toolpaths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable , [default parameters](#adjust-default-parameters-if-required) that might or might not need to be ajusted and [variable parameters](##set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
+The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable , [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
 
 ###Reference genomes for cross-mapping
 Reference genomes for cross-mapping should be provided as one fasta file containing the chromosomes as separate entries. These genome fasta files can for example be obtained from UCSC Genome Browser or Ensembl. In the [test run](#quick-start) cross-mapping is disabled to avoid this dependency. 
@@ -95,7 +90,7 @@ Input files are unmapped BAM files (one per sample). Input files have to be loca
 Running RefFreeDMA
 ------------------
 
-###Set tool paths (configuration file)
+###Set tool paths
 |parameter|explanation|
 -----|-----------|
 |tool_path|Path to a directory containing all the need external software. e.g. the [tools.tar.gz](www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
@@ -116,7 +111,7 @@ bsmap_path=$tool_path/bsmap_2.90/
 samtools_path=$tool_path/samtools_1.2/bin/
 ```
 
-###Adjust default parameters if required (configuration file)
+###Adjust default parameters if required
 |parameter|proposed value|description|
 ----------|-------|-----------|
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
@@ -145,7 +140,7 @@ crossMap_mismatchRate=0.2
 nTopDiffMeth=500
 ```
 
-###Set variable parameters (configuration file)
+###Set variable parameters
 |parameter|example|description|
 ----------|--------|-------|-----------|
 working_dir|/home/RefFreeDMA_test|Directory in which analysis is to be perfoormed.|
