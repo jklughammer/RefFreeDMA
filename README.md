@@ -93,7 +93,7 @@ Running RefFreeDMA
 ###Set tool paths
 |parameter|explanation|
 -----|-----------|
-|tool_path|Path to a directory containing all the need external software. e.g. the [tools.tar.gz](www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
+|tool_path|Path to a directory containing all the need external software. e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
 |picard_path|Needed for sam to fastq conversion|
 |trim_galore_path|Needed for read trimming|
 |cutadapt_path|Needed for read trimming|
