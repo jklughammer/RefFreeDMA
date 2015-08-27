@@ -23,7 +23,7 @@ mkdir -p $logdir
 #-----------------------TOOLS_START----------------------------
 biseq_path=$scripts/
 export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$PATH
-export PYTHONPATH=$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
+export PYTHONPATH=$tool_path/python2.7:$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
 #-----------------------TOOLS_END----------------------------
 
 
