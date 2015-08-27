@@ -1,0 +1,421 @@
+#! /bin/bash
+
+#Author: Johanna Klughammer
+#Date: 26.07.2015
+
+
+#-----------------------LOAD_CONFIGURATION_START---------------
+if [ $# -eq 0 ]
+then
+	echo "Please pass the configuration file as parameter to RefFreeDMA.sh!"
+	exit 1
+fi
+source $1
+#-----------------------LOAD_CONFIGURATION_END---------------
+
+#-----------------------PATHS_START----------------------------
+bam_dir=$working_dir/unmapped_bam
+scripts=$(cd "$(dirname $0)"; pwd)/scripts
+logdir=$working_dir/log
+mkdir -p $logdir
+#-----------------------PATHS_END------------------------------
+
+#-----------------------TOOLS_START----------------------------
+biseq_path=$scripts/
+export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$PATH
+export PYTHONPATH=$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
+#-----------------------TOOLS_END----------------------------
+
+
+#-----------------------FUNCTIONS_START------------------------
+function wait_for_slurm {
+	wait_time=$1
+	count=$2
+	working_dir=$3
+	
+	echo "wait_time $wait_time"
+	echo "count $count"
+#	echo "wd $working_dir"
+	
+	
+	while [ `ls $working_dir/*.done 2>/dev/null|wc -w` -lt 1 ]
+	do
+		echo "waiting for first job to finish..."
+		sleep ${wait_time}m
+	done
+
+	no=`ls $working_dir/*.done|wc -w`
+	while [ $no -lt $count ]
+	do
+		no=`ls $working_dir/*.done|wc -w`
+		echo "waiting till all jobs are finished... $no done"
+		sleep ${wait_time}m
+
+	done
+	
+	rm $working_dir/*.done
+}
+
+function get_proc_stats {
+echo $2 >> $logdir/time
+eval "/usr/bin/time -o $logdir/time --append -f 'command: %C\ntime(sec): %e(real_time) %S(system) %U(user)\nmemory(Kbytes): %M(peak) %K(avg_total)\n' $1"
+
+}
+
+#-----------------------FUNCTIONS_END------------------------
+
+#-----------------------BASIC_CHECKS_START-------------------------
+
+if [[ $working_dir =~ "__" ]]; then 
+echo "The string '__' was found the working_dir path. This is not allowed!"
+exit 1
+fi
+
+#-----------------------BASIC_CHECKS_END-------------------------
+
+
+#------------------READ_PREPARATION_START-----------------------
+
+
+#convert .bam files to .fastq files and trimm reads (quality and adapter)
+step="\n-------Read preparation-------\n"
+printf "$step"
+count=0
+submitted=0
+rm $working_dir/*.done 2>/dev/null
+for file in `ls $bam_dir/*.bam`; do
+	sample=$(basename $file .bam)
+	sample=${sample/"$nameSeparator"/"__"}
+	echo $sample
+	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
+		echo "submitted"
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=develop --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator"
+			sleep 0.01m
+			((submitted++))
+		else
+			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' &> $logdir/prepareReads_${sample}.log" "$step"
+		fi
+	else
+		echo "${sample}_uniq.ref exists. Not submitted!"
+	fi
+	((count++))
+done
+if [ ! $submitted = 0 ]; then
+	wait_for_slurm $wait_time $submitted $working_dir
+fi
+shopt -s extglob
+if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $count ]; then
+	echo "Didn't find the expected number of uniq.ref files ($count). Exiting!"
+	exit 1
+fi
+shopt -u extglob
+
+#------------------READ_PREPARATION_END-----------------------
+
+
+#------------------REFERENCE_GENERATION_START-----------------------
+
+step="\n-------Noise reduction-------\n"
+count=0
+printf "$step"
+if [ ! -f $working_dir/reduced/merged_dupl.ref ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=noiseReduction --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/noiseReduction_%j.err -o $logdir/noiseReduction_%j.log $scripts/noiseReduction.sh $working_dir $filtLim $maxSamples
+		((count++))
+	else
+		get_proc_stats "$scripts/noiseReduction.sh $working_dir $filtLim $maxSamples" "$step"
+	fi
+else
+	echo "merged_dupl.ref exists. Skipping!"
+fi
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $working_dir/reduced/merged_dupl.ref ]; then
+	echo "Noise reduction failed. Exiting!"
+	exit 1
+fi
+
+
+#reduce redundency further by including smaller in larger reads and by merging reads with the same converted sequence
+step="\n-------Basic consensus finding-------\n"
+printf "$step"
+
+count=0
+if [ `ls $working_dir/reduced/*collapse* 2>/dev/null|wc -l` -lt 1 ]; then
+	
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=makePreConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/makePreConsensus_%j.err -o $logdir/makePreConsensus_%j.log $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit
+		((count++))
+	else
+		get_proc_stats "python $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit" "$step"
+	fi
+else
+	echo "At least one collapse file exists. Skipping!"
+fi
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $working_dir/reduced/*collapse.fa ] || [ ! -s $working_dir/reduced/*collapse.fq ]; then
+	echo "Basic consensus finding failed. Exiting!"
+	exit 1
+fi
+
+#reduce redundency of deduced_references further by now also including SNPs
+#prepare bowtie2 output to merge similar refs in order to reduce the redundancy --> makeFinalConsensus.R
+#prduce table of form
+#1.     Mapped_ref_name
+#2.     mapped_ref_seq
+#3.     target_ref_name
+#4.     target_ref_pos
+#5.     CIGAR
+#6.     Mismatches
+#7.     mapped_ref_length
+#8.     alignment(primary|secondary)
+#END
+step="\n-------Map to self with Bowtie2-------\n"
+printf "$step"
+sample="merged_uniq_collapse"
+reduced_dir=$working_dir/reduced/
+ref_fasta=`ls $reduced_dir/*collapse.fa` || exit 1
+in_fastq=`ls $reduced_dir/*collapse.fq` || exit 1
+
+
+count=0
+if [ ! -f $reduced_dir/*_toSelf.sam ]; then
+	rm $working_dir/*.done 2>/dev/null
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=redToSelf --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/redToSelf_%j.err -o $logdir/redToSelf_%j.log $scripts/mapToSelf_bt2.sh $reduced_dir $ref_fasta $in_fastq $working_dir $bowtie2_path $nProcesses
+		count=1
+	else
+		get_proc_stats "$scripts/mapToSelf_bt2.sh $reduced_dir $ref_fasta $in_fastq $working_dir $bowtie2_path $nProcesses &> $logdir/redToSelf_${sample}.log" "$step"
+	fi
+else
+	echo "toSelf.sam exists. Skipping!"
+fi
+
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $reduced_dir/*_toSelf.sam ]; then
+	echo "Map to self failed. Exiting!"
+	exit 1
+fi
+
+# filter bt2 alignment (max no of mismatches allowed) and produce .ref file Takes about 5 h for 800M lines (~12M refs)
+step="\n-------MapToSelf filter-------\n"
+count=0
+printf "$step"
+if [ ! -f $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
+		((count++))
+	else
+		get_proc_stats "$scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir" "$step"
+	fi
+else
+	echo "toSelf_filtered_${mapToSelf_filter}mm exists. Skipping!" 
+fi
+
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
+	echo "Map to self filtering failed. Exiting!"
+	exit 1
+fi
+
+# Account for SNPs
+step="\n-------Accurate consensus finding-------\n"
+printf "$step"
+sample=toSelf_filtered_${mapToSelf_filter}mm
+cons_dir=$reduced_dir/consensus/
+mkdir -p $cons_dir
+count=0
+if [ ! -f $cons_dir/toSelf_*_final ]; then
+	rm $working_dir/*.done 2>/dev/null
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
+		count=1
+	else
+		get_proc_stats "$scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit &> $logdir/makeConsensus_${sample}.log" "$step"
+	fi
+else
+	echo "final file exists. Skipping!"
+fi
+
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $cons_dir/toSelf_*_final ]; then
+	echo "Accurate consensus finding failed. Exiting!"
+	exit 1
+fi
+
+#deal with reverse complements
+step="\n-------Identify potential reverse complements-------\n"
+count=0
+printf "$step"
+if [ ! -f $cons_dir/${sample}_final_rc ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=findRevComp_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/findRevComp_%j.err -o $logdir/findRevComp_%j.log $scripts/findRevComp.sh $cons_dir $sample $working_dir
+		((count++))
+	else
+		get_proc_stats "$scripts/findRevComp.sh $cons_dir $sample $working_dir" "$step"
+	fi
+else
+	echo "${sample}_final_rc exists. Skipping!"
+fi
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+fi
+
+if [ ! -s $cons_dir/${sample}_final_rc ]; then
+	echo "Identifying potential reverese complements failed. Exiting!"
+	exit 1
+fi
+
+step="\n-------Merge reverse complements-------\n"
+count=0
+printf "$step"
+if [ ! -f $cons_dir/${sample}_final_rc-res ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=mergeRevComp --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/mergeRevComp_%j.err -o $logdir/mergeRevComp_%j.log $scripts/mergeRevComp.py $cons_dir/${sample}_final_rc $working_dir
+		((count++))
+	else
+		get_proc_stats "python $scripts/mergeRevComp.py $cons_dir/${sample}_final_rc $working_dir" "$step"
+	fi
+	if [ ! $count = 0 ]; then
+		wait_for_slurm $wait_time $count $working_dir
+	fi
+
+	cat $cons_dir/${sample}_final_rc-res >> $cons_dir/${sample}_final_norc
+else
+	echo "${sample}_final_rc-res exists. Skipping!"
+fi	
+
+if [ ! -s $cons_dir/${sample}_final_rc-res ]; then
+	echo "Merging potential reverese complements failed. Exiting!"
+	exit 1
+fi
+
+#concatenate
+step="\n-------Concatenating deduced genome fragments-------\n"
+count=0
+printf "$step"
+if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=concatenateRef --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/concatenateRef_%j.err -o $logdir/concatenateRef_%j.log $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir
+		((count++))
+	else
+		get_proc_stats "python $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir" "$step"
+	fi
+	
+	if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+	fi
+	
+	mkdir -p $cons_dir/${sample}_final_concat
+	if [ -f $cons_dir/${sample}_final_concat.fa ]; then
+		mv $cons_dir/${sample}_final_concat.fa $cons_dir/${sample}_final_concat/
+	fi 
+else
+	echo "${sample}_final_concat.fa exists. Skipping!"
+fi
+
+if [ ! -s $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
+	echo "Concatenating failed. Exiting!"
+	exit 1
+fi
+
+#------------------REFERENCE_GENERATION_END-----------------------
+
+#---------------------CrossMapping_START--------------------------
+if [ ! $cross_genome_fa = "-" ]; then
+	ref_genome_fasta=$cross_genome_fa
+	genome_id=$(basename $ref_genome_fasta)
+	step="\n-------Cross mapping to $genome_id-------\n"
+	printf "$step"
+	if [ ! -s $working_dir/crossMapping/$genome_id/*.flagstat ]; then
+		unmapped_fastq=$working_dir/reduced/consensus/${sample}_final.fq
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=crossMapping_$cross_genome_id --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${cross_genome_id}_%j.err" -o "$logdir/crossMapping_${cross_genome_id}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
+		else
+			get_proc_stats "$scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses &> $logdir/crossMapping_${cross_genome_id}.log" "$step"
+		fi
+	else
+		echo "Cross-mapping flagstat file already exists. Skipping!"
+	fi
+fi
+#------------------CrossMapping_END-----------------------
+
+#---------------------READ_Mapping_and_Methcalling_START--------------------------
+step="\n-------Mapping to the deduced genome and methylation calling-------\n"
+printf "$step"
+mode="ded_ref"
+genome_id=${sample}_final_concat
+ref_genome_fasta=$working_dir/reduced/consensus/$genome_id/$genome_id.fa 
+ 
+count=0
+submitted=0
+rm $working_dir/*.done 2>/dev/null
+for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
+	sample=$(basename $unmapped_fastq .fq)
+	sample=${sample//_trimmed/}
+	echo $sample
+	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
+		echo submitted
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses
+			((submitted++))
+		else
+			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses &> $logdir/meth_calling_${sample}.log" "$step"
+		fi
+	else
+		echo "$sample already processed. Not submitted!"
+	fi
+	((count++))
+done
+
+if [ ! $submitted = 0 ]; then
+	wait_for_slurm $wait_time $submitted $working_dir
+fi
+
+if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed|wc -l` = $count ]; then
+	echo "Didn't find the expected number of methylation.bed files ($count). Exiting!"
+	exit 1
+fi
+#---------------------READ_Mapping_and_Methcalling_END--------------------------
+
+#---------------------DFFERENTIAL_METH_ANALYSIS_START--------------------------
+rm $working_dir/*.done 2>/dev/null
+step="\n-------Differential methylation analysis-------\n"
+printf "$step"
+count=0
+if [ ! -f $working_dir/$genome_id/diffMeth/*_diff_meth.tsv ]; then
+	if [ $parallel = "TRUE" ]; then
+		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_%j.err" -o "$logdir/diffMeth_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts
+		count=1
+	else
+		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts &> $logdir/diffMeth.log" "$step"
+	fi
+else
+	echo "diff_meth.tsv already exists. Skipping..."
+fi
+
+if [ ! $count = 0 ]; then
+	wait_for_slurm $wait_time $count $working_dir
+	fi
+rm $working_dir/*.done 2>/dev/null
+if [ ! -s $working_dir/$genome_id/diffMeth/*_diff_meth.tsv ]; then
+	echo "Differential methylation analysis failed. Exiting!"
+	exit 1
+fi
+#---------------------DFFERENTIAL_METH_ANALYSIS_END--------------------------
+echo "Done."
