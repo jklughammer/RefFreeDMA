@@ -26,17 +26,26 @@ export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsm
 export PYTHONPATH=$tool_path/python2.7:$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
 
 #check if python libraries are there
+printf "\nChecking for required python libraries...\n"
 fail=0
-python -c 'import Bio' 2>/dev/null && echo "python Bio ... OK" || echo "python Bio ...  FAIL";fail=1
-python -c 'import pysam' 2>/dev/null && echo "python pysam ... OK" || echo "python pysam ...  FAIL";fail=1
-python -c 'import bitarray' 2>/dev/null && echo "python bitarray ... OK" || echo "python bitarray ...  FAIL";fail=1
-python -c 'import guppy' 2>/dev/null && echo "python guppy ... OK" || echo "python guppy ...  FAIL";fail=1
+python -c 'import Bio' 2>/dev/null && echo "python Bio ... OK" ||{ echo "python Bio ...  FAIL";fail=1; }
+python -c 'import pysam' 2>/dev/null && echo "python pysam ... OK" ||{ echo "python pysam ...  FAIL";fail=1; }
+python -c 'import bitarray' 2>/dev/null && echo "python bitarray ... OK" ||{ echo "python bitarray ...  FAIL";fail=1; }
+python -c 'import guppy' 2>/dev/null && echo "python guppy ... OK" ||{ echo "python guppy ...  FAIL";fail=1; }
+#check if tools are there
+printf "\nChecking for required tools...\n"
+which samtools &>/dev/null && echo "samtools ... OK" ||{ echo "samtools ...  FAIL";fail=1; }
+which trim_galore &>/dev/null && echo "trim_galore ... OK" ||{ echo "trim_galore ...  FAIL";fail=1; }
+which cutadapt &>/dev/null && echo "cutadapt ... OK" ||{ echo "cutadapt ...  FAIL";fail=1; }
+which bowtie2 &>/dev/null && echo "bowtie2 ... OK" ||{ echo "bowtie2 ...  FAIL";fail=1; }
+which samtools &>/dev/null && echo "bsmap ... OK" ||{ echo "bsmap ...  FAIL";fail=1; }
+[ -e $picard_path/SamToFastq.jar ]  && echo "samToFastq.jar ... OK" ||{ echo "samToFastq.jar ...  FAIL";fail=1; } 
+
 
 if [ $fail -eq 1 ];then
-	echo Please install missing python libraries.
+	printf "\nPlease provide missing python libraries and tools.\nIf you are using the external software bundle, did you set the path in the configuration file?\n"
 	exit 0
 fi
-
 #-----------------------TOOLS_END----------------------------
 
 
