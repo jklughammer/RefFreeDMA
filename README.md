@@ -145,7 +145,7 @@ nTopDiffMeth=500
 ----------|--------|-------|-----------|
 working_dir|/home/RefFreeDMA_test|Directory in which analysis is to be perfoormed.|
 species|Hum|Identifier that will be part of the differential methylation output files.|
-cross_genome_fa|/home/genomes/mm10.fa|Fasta file for genome that should be used for cross-mapping. Set to "" to disable.|
+cross_genome_fa|/home/genomes/mm10.fa|Fasta file for genome that should be used for cross-mapping. Set to "-" to disable.|
 sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample annotation file.|
 compCol|comp_gran_lympho|Column in the sample annotation file that specifies groups of samples for differential methylation analysis.|
 groupsCol|Cell_Type|Column in the sample annotation file that specifies groups of samples for plotting. Can be the same as compCol.|
