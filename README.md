@@ -5,21 +5,20 @@ RefFreeDMA is a pipeline to perform genome-wide, high-resolution, differential m
 
 Quick start
 -----------
-__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. An exemplary working directory (RefFreeDMA_test) including the raw data, the sample annotation file and the configuration file is provided [here](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz). RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running ```reset_test_dir.sh RefFreeDMA_test```. 
+__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file and the configuration file. RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh RefFreeDMA_test`. 
 
 ####9 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
-2\. Download and extract the [test data set](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz): `tar -xzf RefFreeDMA_test.tar.gz`
-3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software). 
-4\. Set the path to the downloaded working directory (RefFreeDMA_test) in the configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg).
-5\. Adjust the [tool paths](#set-tool-paths) in the configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg) or make sure all tools are in your PATH variable.
-6\. Install the required [python libraries](#python-libraries) if needed.
-7\. Install the required [R packages](#r-packages) if needed.  
-8\. Run RefFreeDMA.sh.
+2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
+3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
+4\. Edit the test configuration file (RefFreeDMA_test/meta/RefFreeDMA_test.cfg): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.
+5\. Install the required [python libraries](#python-libraries) if needed.
+6\. Install the required [R packages](#r-packages) if needed.  
+7\. Run RefFreeDMA.sh.
 ```
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
-9\. View the most relevant results under PATH_TO_TESTDIR/RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth
+8\. View the most relevant results under PATH_TO_TESTDIR/RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth
 
 Dependencies
 ------------
