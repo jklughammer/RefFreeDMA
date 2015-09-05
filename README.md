@@ -187,7 +187,7 @@ sbatch --export=ALL --get-user-env --job-name= --ntasks= --cpus-per-task= --mem-
 ```
 
 ###RefFreeDMA results
-**directories** contain the user-relevant information. The other directories contain intermediate files, that might be usefull for reruns and development.
+\*\*directories\*\* contain the user-relevant information. The other directories contain intermediate files, that might be needed for reruns and development.
 ```
 working_dir
 ├── **crossMapping**
