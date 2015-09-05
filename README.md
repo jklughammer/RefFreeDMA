@@ -17,10 +17,17 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ```
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
-7\. View the most relevant results under RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth
+7\. View the most relevant results under `RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth`  
+(8.) If you encounter problems please check the `RefFreeDMA_test/log` directory. It contains log files for each step.
 
 Dependencies
 ------------
+###System requirements
+**Linux 64bit**  
+**bash:** http://www.gnu.org/software/bash/  
+**java:** http://openjdk.java.net/install/  
+**Python 2.7:** https://www.python.org/downloads/  
+**R/Rscript 3.1.2:** https://cran.r-project.org/  
 
 ###External software
 __*Tools*__  
@@ -35,13 +42,6 @@ __*Python libraries*__
 **bitarray:** https://pypi.python.org/packages/source/b/bitarray/bitarray-0.8.1.tar.gz  
 **guppy:** https://pypi.python.org/packages/source/g/guppy/guppy-0.1.10.tar.gz  
 **pysam:** https://code.google.com/p/pysam/downloads/detail?name=pysam-0.7.5.tar.gz  
-
-
-###System requirements
-**Linux 64bit**  
-**bash:** http://www.gnu.org/software/bash/  
-**Python 2.7:** https://www.python.org/downloads/  
-**R/Rscript 3.1.2:** https://cran.r-project.org/  
 
 ###R packages
 ```R
@@ -63,6 +63,18 @@ biocLite("Biostrings",suppressUpdates=TRUE)
 install.packages("devtools")
 require(devtools)
 install_github("sheffien/simpleCache")
+
+#Check if all required packages are installed properly 
+library("VennDiagram")
+library("hexbin")
+library("data.table")
+library("ggplot2")
+library("reshape2")
+library("MASS")
+library("GenomicRanges")
+library("limma")
+library("Biostrings")
+library("simpleCache")
 ```
 ###Configuration file
 The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable , [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
@@ -72,7 +84,7 @@ Reference genomes for cross-mapping should be provided as one fasta file contain
 
 ###Sample annotation sheet
 
-The sample annotation sheet has to contain at least two columns: Sample_Name and a collunm that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefines column Name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter [sample_annotation](#set-command-line-parameters).
+The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefines column Name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter [sample_annotation](#set-command-line-parameters).
 
 | Sample_Name  |comp_gran_lympho|Cell_Type| XXX  | YYY  |
 |---|---|---|---|---|
@@ -97,7 +109,7 @@ Running RefFreeDMA
 |picard_path|Needed for sam to fastq conversion|
 |trim_galore_path|Needed for read trimming|
 |cutadapt_path|Needed for read trimming|
-|bowtie2_path|Needed for all agains all alignment (cluster finding)|
+|bowtie2_path|Needed for all against all alignment (cluster finding)|
 |bsmap_path|Needed for bisulfite conversion aware alignment|
 |samtools_path|needed for bam/sam conversions, indexing and flagstats|
 
@@ -116,8 +128,8 @@ samtools_path=$tool_path/samtools_1.2/bin/
 ----------|-------|-----------|
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
 |nProcesses|1|Maximum number of allowed parallel processes for mapping and methylation calling.|
-|nameSeparator|"#"|Unique character(s) that separate flowdell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
-|maxReadLen|51|Actual maximum read letngth or if 3' croping is desired for, max length of read after cropping.|
+|nameSeparator|"#"|Unique character(s) that separate flowcell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
+|maxReadLen|51|Actual maximum read letngth or if 3' cropping is desired for, max length of read after cropping.|
 |maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
 |filtLim|4|Only consider reads for the generation of the deduced genome that occur at least in 2 out of filtLim samples.|
 |cLimit|0.05|Minimum frequency of cytosines at a certain position in order to call a cytosine in the consensus sequence.
@@ -143,7 +155,7 @@ nTopDiffMeth=500
 ###Set variable parameters
 |parameter|example|description|
 ----------|--------|-------|-----------|
-working_dir|/home/RefFreeDMA_test|Directory in which analysis is to be perfoormed.|
+working_dir|/home/RefFreeDMA_test|Directory in which analysis is to be performed.|
 species|Hum|Identifier that will be part of the differential methylation output files.|
 cross_genome_fa|/home/genomes/mm10.fa|Fasta file for genome that should be used for cross-mapping. Set to "-" to disable.|
 sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample annotation file.|
@@ -162,7 +174,7 @@ parallel=FALSE
 ```
 
 ###Adapt cluster submission 
-If run in parallel mode, RefFreeDMA submits the different tasks to the compute cluster instead of running them locally. The submit commands are valid for SLURM. If you are working with a different resource menagement system you need adjust the submit commands in RefFreeDMA.sh.
+If run in parallel mode, RefFreeDMA submits the different tasks to the compute cluster instead of running them locally. The submit commands are valid for SLURM. If you are working with a different resource management system you need adjust the submit commands in RefFreeDMA.sh.
 The SLURM submit command is of the following structure:
 ```
 sbatch --export=ALL --get-user-env --job-name= --ntasks= --cpus-per-task= --mem-per-cpu= --partition= --time= -e -o
@@ -175,9 +187,10 @@ sbatch --export=ALL --get-user-env --job-name= --ntasks= --cpus-per-task= --mem-
 ```
 
 ###RefFreeDMA results
+**directories** contain the user-relevant information. The other directories contain intermediate files, that might be usefull for reruns and development.
 ```
 working_dir
-├── crossMapping
+├── **crossMapping**
 |   └── cross_genome
 |	    ├──crossMapping.bam
 |	    ├──crossMapping.bai
@@ -186,7 +199,7 @@ working_dir
 |   ├── Sample1
 |   └── ...
 ├── log
-├── motifAnalysis
+├── **motifAnalysis**
 |   ├── topXXXGroup1.fa
 |   ├── topXXXGroup2.fa
 |   └── allDeducedGenomeFragments.fa
@@ -198,7 +211,7 @@ working_dir
 |   ├── Sample1
 |   |   └── biseqMethcalling
 |   ├── ...
-|   └── diffMeth
+|   └── **diffMeth**
 |   	├── diff_meth.tsv
 |	    ├── diff_meth_CpG.tsv
 |	    ├── mean_meth.tsv
