@@ -80,11 +80,11 @@ library("simpleCache")
 The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable , [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
 
 ###Reference genomes for cross-mapping
-Reference genomes for cross-mapping should be provided as one fasta file containing the chromosomes as separate entries. These genome fasta files can for example be obtained from UCSC Genome Browser or Ensembl. In the [test run](#quick-start) cross-mapping is disabled to avoid this dependency. 
+Reference genomes for cross-mapping should be provided as one fasta file containing the chromosomes as separate entries. These genome fasta files can for example be obtained from UCSC Genome Browser or Ensembl. You can run RefFreeDMA on the same working directory for multiple cross-mapping genomes. There will be a separate output folder for each genome. In the [test run](#quick-start) cross-mapping is disabled by default to avoid the genome dependency, but can easily be enabled by passing a genome (cross_genome_fa) as [variable parameter](#set-variable-parameters). 
 
 ###Sample annotation sheet
 
-The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefines column Name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter [sample_annotation](#set-command-line-parameters).
+The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefines column name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
 
 | Sample_Name  |comp_gran_lympho|Cell_Type| XXX  | YYY  |
 |---|---|---|---|---|
@@ -97,12 +97,14 @@ The sample annotation sheet has to contain at least two columns: Sample_Name and
 
 
 ###Input files/ working directory
-Input files are unmapped BAM files (one per sample). Input files have to be located or linked (ln -s) in a folder called unmapped_bam inside the specified working directory (working_dir). Input file names consist of either the sample name as specified in the sample annotation sheet or prefix (e.g. flowcell information) followed by the sample name. In the latter case prefix and sample name must be separated by a unique character sequence, which is to be specified as nameSeparator ([default parameters](#adjust-default-parameters-if-required)).
+Input files are unmapped BAM files (one per sample). Input files have to be located or linked (`ln -s`) in a folder called unmapped_bam inside the specified working directory (working_dir). Input file names consist of either the sample name as specified in the sample annotation sheet or prefix (e.g. flowcell information) followed by the sample name. In the latter case prefix and sample name must be separated by a unique character sequence, which is to be specified as nameSeparator in the [default parameters](#adjust-default-parameters-if-required).
 
 Running RefFreeDMA
 ------------------
 
 ###Set tool paths
+**Note:** Tool paths are set in the configuration file.  
+
 |parameter|explanation|
 -----|-----------|
 |tool_path|Path to a directory containing all the need external software. e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
@@ -124,6 +126,8 @@ samtools_path=$tool_path/samtools_1.2/bin/
 ```
 
 ###Adjust default parameters if required
+**Note:** Default parameters are set in the configuration file.  
+
 |parameter|proposed value|description|
 ----------|-------|-----------|
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
@@ -153,11 +157,13 @@ nTopDiffMeth=500
 ```
 
 ###Set variable parameters
+**Note:** Variable parameters are set in the configuration file.  
+
 |parameter|example|description|
 ----------|--------|-------|-----------|
-working_dir|/home/RefFreeDMA_test|Directory in which analysis is to be performed.|
+working_dir|/home/RefFreeDMA_test|Directory in which the analysis is to be performed.|
 species|Hum|Identifier that will be part of the differential methylation output files.|
-cross_genome_fa|/home/genomes/mm10.fa|Fasta file for genome that should be used for cross-mapping. Set to "-" to disable.|
+cross_genome_fa|/home/genomes/mm10.fa|Fasta file for a genome that should be used for cross-mapping. Set to "-" to disable.|
 sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample annotation file.|
 compCol|comp_gran_lympho|Column in the sample annotation file that specifies groups of samples for differential methylation analysis.|
 groupsCol|Cell_Type|Column in the sample annotation file that specifies groups of samples for plotting. Can be the same as compCol.|
