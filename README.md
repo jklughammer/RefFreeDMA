@@ -5,7 +5,7 @@ RefFreeDMA is a pipeline to perform genome-wide, high-resolution, differential m
 
 Quick start
 -----------
-__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file, and the configuration file. RefFeeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh PATH_TO_TESTDIR/RefFreeDMA_test`. 
+__Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file, and the configuration file. RefFreeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh PATH_TO_TESTDIR/RefFreeDMA_test`. 
 
 ####7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
@@ -77,14 +77,14 @@ library("Biostrings")
 library("simpleCache")
 ```
 ###Configuration file
-The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable , [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
+The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable, [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
 
 ###Reference genomes for cross-mapping
 Reference genomes for cross-mapping should be provided as one fasta file containing the chromosomes as separate entries. These genome fasta files can for example be obtained from UCSC Genome Browser or Ensembl. You can run RefFreeDMA on the same working directory for multiple cross-mapping genomes. There will be a separate output folder for each genome. In the [test run](#quick-start) cross-mapping is disabled by default to avoid the genome dependency, but can easily be enabled by passing a genome (cross_genome_fa) as [variable parameter](#set-variable-parameters). 
 
 ###Sample annotation sheet
 
-The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefines column name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
+The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefined column name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
 
 | Sample_Name  |comp_gran_lympho|Cell_Type| XXX  | YYY  |
 |---|---|---|---|---|
@@ -107,7 +107,7 @@ Running RefFreeDMA
 
 |parameter|explanation|
 -----|-----------|
-|tool_path|Path to a directory containing all the need external software. e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
+|tool_path|Path to a directory containing all the need external software, e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
 |picard_path|Needed for sam to fastq conversion|
 |trim_galore_path|Needed for read trimming|
 |cutadapt_path|Needed for read trimming|
@@ -133,11 +133,11 @@ samtools_path=$tool_path/samtools_1.2/bin/
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
 |nProcesses|1|Maximum number of allowed parallel processes for mapping and methylation calling.|
 |nameSeparator|"#"|Unique character(s) that separate flowcell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
-|maxReadLen|51|Actual maximum read letngth or if 3' cropping is desired for, max length of read after cropping.|
+|maxReadLen|51|Actual maximum read length or if 3' cropping is desired for, max length of read after cropping.|
 |maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
 |filtLim|4|Only consider reads for the generation of the deduced genome that occur at least in 2 out of filtLim samples.|
 |cLimit|0.05|Minimum frequency of cytosines at a certain position in order to call a cytosine in the consensus sequence.
-|mapToSelf_filter|0.08|Only accept hits as true matches where the mismatch rate is <mapToSelf_filter|
+|mapToSelf_filter|0.08|Only accept hits as true matches where the mismatch rate is < mapToSelf_filter|
 |consensus_dist|0.05|Max accepted mismatch rate between a read and its assigned consensus|
 |crossMap_mismatchRate|0.2|Allowed mismatch rate during crossmapping. The parameter is passed to bsmap|
 |nTopDiffMeth|500|Maximum number of top differentially methylated fragments to return as fasta sequences|
