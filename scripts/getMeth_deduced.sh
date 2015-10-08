@@ -14,13 +14,13 @@ ref_genome_fasta=$3
 ref_genome_name=$4
 sample=$5
 nProcesses=$9
+nonCpG=${10}
 #------------------------------
 #tools
 #------------------------------
 samtools_path=$6
 bsmap_path=$7
 biseq_path=$8
-#=$9
 
 # -----------------------------------------
 # bsmap
@@ -92,7 +92,7 @@ function biseq {
 	mkdir -p $align_dir/biseqMethcalling
 	cd $align_dir/biseqMethcalling
 
-	python $biseq_path/biseqMethCalling.py \
+command="python $biseq_path/biseqMethCalling.py \
 	--sampleName=$sample_name \
 	--alignmentFile=$file \
 	--methodPrefix=RRBS \
@@ -115,7 +115,17 @@ function biseq {
 	--maxProcesses=$nProcesses \
 	--genomeDir=$genome_dir \
 	--inGenome=$genome_id \
-	--outGenome=$genome_id
+	--outGenome=$genome_id"
+
+if [ $nonCpG = "TRUE" ]; then
+echo "nonCpG mode"
+command="$command \
+	--processCpHpG \
+	--processCpHpH"
+fi
+
+`$command`
+
 }
 
 
