@@ -28,6 +28,8 @@ comp_col=args[6]
 groups_col=args[7]
 nTopDiffMeth=args[8]
 scripts=args[9]
+motif=args[10]
+
 
 source(paste0(scripts,"/ggbiplot_custom.R"))
 
@@ -39,7 +41,7 @@ options(stringsAsFactors=FALSE)
 system(paste0("mkdir -p ",getwd(),"/RCache/"))
 setCacheDir(paste0(getwd(),"/RCache/"))
 
-out_dir=paste0(RRBSdir,"/diffMeth")
+out_dir=paste0(RRBSdir,"/diffMeth_",motif)
 system(paste0("mkdir -p ",out_dir))
 
 stats=data.frame()
@@ -50,8 +52,8 @@ stats=data.frame()
 #--------------------------------
 
 # collect methylation tables
-collectMethData=function(dir){
-  RRBSfiles=system(paste0("ls ",dir, "/*/*/*cpgMethylation*.bed"), intern=TRUE)
+collectMethData=function(dir,motif){
+  RRBSfiles=system(paste0("ls ",dir, "/*/*/*",motif,"Methylation*.bed"), intern=TRUE)
   Meth_bed=NULL
   for (file in RRBSfiles){
     if (grepl("__",file)==TRUE){
@@ -220,31 +222,31 @@ RRBSfiles=system(paste0("ls ",RRBSdir, "/*/*/*.bed"), intern=TRUE)
 #add bed file location to sample annotation 
 RRBSfiles_tab=data.table(Sample_Name=unlist(lapply(RRBSfiles,function(x){unlist(strsplit(x,"__|\\."))[3]})),location=RRBSfiles)
 #combine meth bed files by caching (Nathan)
-simpleCache(recreate=FALSE,paste0("combinedMeth_",species),instruction="collectMethData(RRBSdir)")
-Meth_bed=get(paste0("combinedMeth_",species))
+simpleCache(recreate=FALSE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
+Meth_bed=get(paste0(motif,"_combinedMeth_",species))
 #deduced geneome fragment .bed file
 refBed_DT=fread(paste0("reduced/consensus/",RRBSdir,".bed"))
 setnames(refBed_DT,names(refBed_DT),c("seqnames","start","end","meta","score","consN","mean_diffNts","max_diffNts","min_diffNts"))
 
 
 #-----------------------------------------
-#Visualize on individual CpG level
+#Visualize on individual motif level
 #-----------------------------------------
-#plot MDS on single CpGs
+#plot MDS on single motifs
 meth.dist=dist(t(as.data.frame(Meth_bed)[,seq(5,ncol(Meth_bed),by=3)]),method="eucl")
 meth.dist[meth.dist<=0]=0.00001
 meth.mds=isoMDS(meth.dist)
 MDS=data.table(Sample_Name=as.character(lapply(row.names(meth.mds$points),function(x){unlist(strsplit(x,"\\."))[1]})),MDS1=meth.mds$points[,1],MDS2=meth.mds$points[,2])
 MDS_annot=merge(MDS,sample_annot,by="Sample_Name")
-pdf(paste0(out_dir,"/",species,"_MDS_CpG.pdf"),height=6,width=7.5)
+pdf(paste0(out_dir,"/",species,"_MDS_motif.pdf"),height=6,width=7.5)
 ggplot(MDS_annot,aes(x=MDS1,y=MDS2,label=Sample_Name))+geom_point(aes(colour=factor(get(groups_col))))+geom_text(aes(colour=factor(get(groups_col))),size=3.5)+theme(legend.title=element_blank())+scale_x_continuous(expand=c(0.5,0.5))+scale_y_continuous(expand=c(0.5,0.5))
 dev.off()
 
-#plot PCA on single CpGs
+#plot PCA on single motifs
 pca=prcomp(t(na.omit(as.data.frame(Meth_bed)[,seq(5,ncol(Meth_bed),by=3)])))
 PC=data.table(Sample_Name=as.character(lapply(row.names(pca$x),function(x){unlist(strsplit(x,"\\."))[1]})),PC1=pca$x[,"PC1"],PC2=pca$x[,"PC2"])
 PC_annot=merge(PC,sample_annot,by="Sample_Name")
-pdf(paste0(out_dir,"/",species,"_PCA_CpG.pdf"),height=6,width=7.5)
+pdf(paste0(out_dir,"/",species,"_PCA_motif.pdf"),height=6,width=7.5)
 ggpl= ggplot(PC_annot,aes(x=PC1,y=PC2,label=Sample_Name))+geom_point(aes(colour=factor(get(groups_col))))+geom_text(aes(colour=factor(get(groups_col))),size=3.5)+theme(legend.title=element_blank())+scale_x_continuous(expand=c(0.5,0.5))+scale_y_continuous(expand=c(0.5,0.5))
 print(ggpl) 
 dev.off()
@@ -278,7 +280,7 @@ write.table(mean_meth,paste0(out_dir,"/",species,"_mean_meth.tsv"),quote=FALSE,s
 #mean_meth1=fread(paste0(out_dir,"/",species,"_mean_meth.tsv"),sep="\t")
 
 #-----------------------------------------
-#Visualize on individual CpG level
+#Visualize on individual motif level
 #-----------------------------------------
 #PCA on fragments
 noNA=as.data.table(na.omit(mean_meth[,c(1,seq(7,ncol(mean_meth),by=2)),with=FALSE]))
@@ -363,7 +365,7 @@ for (i in 1:length(comp_matrix)){
 		area2=round(nrow(na.omit(Meth_bed[,comp_matrix[[i]]$meth.cols[j+1],with=FALSE]))/scale,2)
 		area.cross=round(nrow(na.omit(Meth_bed[,c(comp_matrix[[i]]$meth.cols[j],comp_matrix[[i]]$meth.cols[j+1]),with=FALSE]))/scale,2)
 
-		pdf(paste0(out_dir,"/Venn_CpG_",comp_matrix[[i]]$sample[j],"-",comp_matrix[[i]]$sample[j+1],"_x",scale,".pdf"),height=3,width=5.5)
+		pdf(paste0(out_dir,"/Venn_motif_",comp_matrix[[i]]$sample[j],"-",comp_matrix[[i]]$sample[j+1],"_x",scale,".pdf"),height=3,width=5.5)
 		grid.newpage()
 		draw.pairwise.venn(area1,area2,area.cross,category=c(comp_matrix[[i]]$sample[j],comp_matrix[[i]]$sample[j+1]),fill=c("blue","orange"),alpha=c(0.4,0.4),cat.dist=c(0.1,0.1),fontface=c("plain","plain","plain"),fontfamily=c("sans","sans","sans"),cat.fontface=c("plain","plain"),cat.fontfamily=c("sans","sans"),cat.pos=c(330,30),cat.col=c("blue","orange"),cat.cex=1.5,mar=c(0.05,0.05,0.05,0.05),cex=c(1.3,1.3,1.3))
 		dev.off()
@@ -397,15 +399,15 @@ diffMeth_matrix=diffMeth_matrix/100
 diffTab[,p.val:=limmaP(diffMeth_matrix,inds.g1=c(1:nrow(comp_matrix[[1]])),inds.g2=c((nrow(comp_matrix[[1]])+1):(nrow(comp_matrix[[1]])+nrow(comp_matrix[[2]]))),adjustment.table=NULL,paired=FALSE),]
 diffTab[,p.val.adjust:=p.adjust(p.val,method="fdr"),]
 
-#calulate combined rank for differential methylation for each individual CpG
+#calulate combined rank for differential methylation for each individual motif
 diffTab[,rank.diff:=rank(-abs(diff.mean.meth),na.last="keep",ties.method="min"),]
 diffTab[,rank.quot:=rank(-abs(quot.log2.mean.meth),na.last="keep",ties.method="min"),]
 diffTab[,rank.pval:=rank(p.val.adjust,na.last="keep",ties.method="min"),]
 diffTab[,max.rank:=pmax(rank.diff,rank.quot,rank.pval),]
 diffTab=diffTab[order(max.rank)]
 
-write.table(diffTab,paste0(out_dir,"/",species,"_diff_meth_CpG.tsv"),quote=FALSE,sep="\t",row.names=FALSE)
-#diffTab=fread(paste0(out_dir,"/",species,"_diff_meth_CpG.tsv"))
+write.table(diffTab,paste0(out_dir,"/",species,"_diff_meth_motif.tsv"),quote=FALSE,sep="\t",row.names=FALSE)
+#diffTab=fread(paste0(out_dir,"/",species,"_diff_meth_motif.tsv"))
 
 #combine pValues per deduced genome fragment
 diffTab_ref=diffTab[,list(sites=.N,p.val.adjust=combineTestPvalsMeth(p.val.adjust,testWeights=mean.mean.cov,correlated=TRUE),meth_hi=as.character(ifelse(mean(quot.mean.meth,na.rm=TRUE)>1,names(comp_matrix)[1],ifelse(mean(quot.mean.meth,na.rm=TRUE)<1,names(comp_matrix)[2],"tie"))),mean.meth.g1=mean(mean.meth.g1, na.rm=TRUE),mean.meth.g2=mean(mean.meth.g2, na.rm=TRUE),mean.cov.g1=mean(mean.cov.g1, na.rm=TRUE),mean.cov.g2=mean(mean.cov.g2, na.rm=TRUE),mean.mean.cov=mean(mean.mean.cov,na.rm=TRUE),diff.mean.meth=mean(diff.mean.meth,na.rm=TRUE),quot.log2.mean.meth=mean(quot.log2.mean.meth,na.rm=TRUE)),by=c("meta","seqnames","start.x","end.x")]
@@ -423,28 +425,32 @@ write.table(diffTab_ref.ordered,paste0(out_dir,"/",species,"_diff_meth.tsv"),quo
 #diffTab_ref.ordered=fread(paste0(out_dir,"/",species,"_diff_meth.tsv"))
 
 #--------------------------------------------------------------------------------------------------------------------------------
-#Visualize mean methylation values for the compared groups for individual CpGs and for deduced genome fragments(scatter plots)
+#Visualize mean methylation values for the compared groups for individual motifs and for deduced genome fragments(scatter plots)
 #--------------------------------------------------------------------------------------------------------------------------------
 
 cov_trsh_l=c(0,8)
 cov_trsh_u=c(Inf,200)
 for (i in 1:length(cov_trsh_l)){
-  sub_CpG=na.omit(diffTab[mean.cov.g1>=cov_trsh_l[i]&mean.cov.g1>=cov_trsh_l[i]&mean.cov.g2<=cov_trsh_u[i]&mean.cov.g2<=cov_trsh_u[i],])
+  sub_motif=na.omit(diffTab[mean.cov.g1>=cov_trsh_l[i]&mean.cov.g1>=cov_trsh_l[i]&mean.cov.g2<=cov_trsh_u[i]&mean.cov.g2<=cov_trsh_u[i],])
   sub_frag=na.omit(diffTab_ref.ordered[meth.cov_mean_g1>=cov_trsh_l[i]&meth.cov_mean_g1>=cov_trsh_l[i]&meth.cov_mean_g2<=cov_trsh_u[i]&meth.cov_mean_g2<=cov_trsh_u[i],])
 comp=c(sub_frag[which(meth.meth_mean_g1>meth.meth_mean_g2)]$meth.meth_hi[1],sub_frag[which(meth.meth_mean_g2>meth.meth_mean_g1)]$meth.meth_hi[1])
 
 
-  if (nrow(sub_CpG)>0){  
+  if (nrow(sub_motif)>0){  
     size=4
-    pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_CpG.pdf"),width=6,height=5)
-    ggp_CpG=ggplot(sub_CpG,aes(x=mean.meth.g1,y=mean.meth.g2))+ stat_binhex(bins=30,col="white")+stat_binhex(data=sub_CpG[p.val.adjust<0.05&mean.cov.g1>8&mean.cov.g2>8][1:1000], aes(x=mean.meth.g1,y=mean.meth.g2),bins=50,col="green",fill=NA) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_CpG[,mean.meth.g1],sub_CpG[,mean.meth.g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_CpG)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_CpG)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))
-    print(ggp_CpG)
+    top_diff_data=sub_motif[p.val.adjust<0.05&mean.cov.g1>8&mean.cov.g2>8][1:1000]
+    if (nrow(na.omit(top_diff_data)) < 10) {data=NA}
+    pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_motif.pdf"),width=6,height=5)
+    ggp_motif=ggplot(sub_motif,aes(x=mean.meth.g1,y=mean.meth.g2))+ stat_binhex(bins=30,col="white")+stat_binhex(data=top_diff_data, aes(x=mean.meth.g1,y=mean.meth.g2),bins=50,col="green",fill=NA) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_motif[,mean.meth.g1],sub_motif[,mean.meth.g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_motif)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_motif)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
+    print(ggp_motif)
     dev.off() 
   }
   if (nrow(sub_frag)>0){
     size=4
+    top_diff_data=sub_frag[meth.pval_adj<0.05&meth.cov_mean_g1>8&meth.cov_mean_g2>8][1:500]
+    if (nrow(na.omit(top_diff_data)) < 10) {data=NA}
     pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_frag.pdf"),width=6,height=5)
-    ggp_frag=ggplot(sub_frag,aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2))+ stat_binhex(bins=30,col="white") +stat_binhex(data=sub_frag[meth.pval_adj<0.05&meth.cov_mean_g1>8&meth.cov_mean_g2>8][1:500], aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),bins=50,fill=NA,col="green") + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_frag[,meth.meth_mean_g1],sub_frag[,meth.meth_mean_g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_frag)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_frag)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))
+    ggp_frag=ggplot(sub_frag,aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2))+ stat_binhex(bins=30,col="white") +stat_binhex(data=top_diff_data, aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),bins=50,fill=NA,col="green") + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_frag[,meth.meth_mean_g1],sub_frag[,meth.meth_mean_g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_frag)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_frag)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
     print(ggp_frag)
     dev.off()
    
@@ -454,6 +460,11 @@ comp=c(sub_frag[which(meth.meth_mean_g1>meth.meth_mean_g2)]$meth.meth_hi[1],sub_
 #---------------------------------------------------------------------------------------------------------
 #Save sequences of to differentially methylated fragments for down-stream analysis (motif enrichment etc)
 #---------------------------------------------------------------------------------------------------------
+#For now only activat for CpG methylation, because in our samples there is no non-cpg differential methylation which leads to errors here
+#TODO: activate this also for nonCpG methylation 
+
+if (motif == "cpg" ){
+
 top_threshold=as.numeric(nTopDiffMeth)
 cov_thres=2
 
@@ -467,17 +478,27 @@ top1=top1_all[1:min(top_threshold,nrow(top1_all))]$dedRef_ID
 top2_all=diffTab_ref.ordered[meth.meth_hi==groups[2]&meth.cov_mean_g1>=cov_thres& meth.cov_mean_g2>=cov_thres&meth.pval_adj<=0.05]
 top2=top2_all[1:min(top_threshold,nrow(top2_all))]$dedRef_ID
 
+bottom_all=diffTab_ref.ordered[meth.cov_mean_g1>=cov_thres& meth.cov_mean_g2>=cov_thres]
+bottom1=bottom_all[(nrow(bottom_all)-min(top_threshold,nrow(top1_all))):nrow(bottom_all)]$dedRef_ID
+bottom2=bottom_all[(nrow(bottom_all)-min(top_threshold,nrow(top2_all))):nrow(bottom_all)]$dedRef_ID
+
 top_fa1=fasta[top1]
 top_fa2=fasta[top2]
+bottom_fa1=fasta[bottom1]
+bottom_fa2=fasta[bottom2]
+
 
 stats=rbind(stats,data.frame(assay="diffMeth",condition=c(paste0(groups[1],"_methHi"),paste0(groups[2],"_methHi")),percent=c(nrow(top1_all)/nrow(diffTab_ref.ordered),nrow(top2_all)/nrow(diffTab_ref.ordered)),number=c(nrow(top1_all),nrow(top2_all)),correlation=NA))
 
 system("mkdir -p motifAnalysis")
 writeXStringSet(top_fa1,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))
 writeXStringSet(top_fa2,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))
+writeXStringSet(bottom_fa1,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))
+writeXStringSet(bottom_fa2,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))
 writeXStringSet(fasta,paste0("motifAnalysis/","allDeducedGenomeFragments.fa"))
 
 write.table(stats,paste0(out_dir,"/",species,"_diffMeth_stats.tsv"),quote=FALSE,sep="\t",row.names=FALSE)
+}
 
-system(paste0("echo '' >",wd,"/","diffMeth.done"))
+system(paste0("echo '' >",wd,"/",motif,"_diffMeth.done"))
 
