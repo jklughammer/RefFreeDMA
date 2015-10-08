@@ -394,10 +394,10 @@ for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
 	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses
+			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG
 			((submitted++))
 		else
-			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses &> $logdir/meth_calling_${sample}.log" "$step"
+			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG &> $logdir/meth_calling_${sample}.log" "$step"
 		fi
 	else
 		echo "$sample already processed. Not submitted!"
@@ -410,34 +410,91 @@ if [ ! $submitted = 0 ]; then
 fi
 
 if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed|wc -l` = $count ]; then
-	echo "Didn't find the expected number of methylation.bed files ($count). Exiting!"
+	echo "Didn't find the expected number of cpgMethylation.bed files ($count). Exiting!"
 	exit 1
 fi
+
+fail=0
+if [ $nonCpG = "TRUE" ]; then
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphpgMethylation*.bed|wc -l` = $count ]; then
+		echo "Didn't find the expected number of cphpgMethylation.bed files ($count). Exiting!"
+		fail=1
+	fi
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphphMethylation*.bed|wc -l` = $count ]; then
+		echo "Didn't find the expected number of cphphMethylation.bed files ($count). Exiting!"
+		fail=1
+	fi
+	if [ $fail = 1 ]; then
+		exit 1
+	fi
+fi
+
 #---------------------READ_Mapping_and_Methcalling_END--------------------------
 
 #---------------------DFFERENTIAL_METH_ANALYSIS_START--------------------------
-rm $working_dir/*.done 2>/dev/null
-step="\n-------Differential methylation analysis-------\n"
-printf "$step"
 count=0
-if [ ! -f $working_dir/$genome_id/diffMeth/*_diff_meth.tsv ]; then
+submitted=0
+rm $working_dir/*.done 2>/dev/null
+step="\n-------Differential methylation analysis for gpg motifs-------\n"
+printf "$step"
+((count++))
+motif="cpg"
+if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_%j.err" -o "$logdir/diffMeth_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts
-		count=1
+		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+		((submitted++))
 	else
-		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts &> $logdir/diffMeth.log" "$step"
+		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
 	fi
 else
-	echo "diff_meth.tsv already exists. Skipping..."
+	echo "$motif diff_meth.tsv already exists. Skipping..."
 fi
 
-if [ ! $count = 0 ]; then
-	wait_for_slurm $wait_time $count $working_dir
+if [ $nonCpG = "TRUE" ]; then
+
+	step="\n-------Differential methylation analysis for gphpg motifs-------\n"
+	printf "$step"
+	((count++))
+	motif="cphpg"
+	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif	
+			((submitted++))		
+		else
+			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
+		fi
+	else
+		echo "$motif diff_meth.tsv already exists. Skipping..."
+	fi
+
+	step="\n-------Differential methylation analysis for gphph motifs-------\n"
+	printf "$step"
+	((count++))
+	motif="cphph"
+	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+			((submitted++))	
+		else
+			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
+		fi
+	else
+		echo "$motif diff_meth.tsv already exists. Skipping..."
+	fi
+fi
+
+
+if [ ! $submitted = 0 ]; then
+	wait_for_slurm $wait_time $submitted $working_dir
 	fi
 rm $working_dir/*.done 2>/dev/null
-if [ ! -s $working_dir/$genome_id/diffMeth/*_diff_meth.tsv ]; then
-	echo "Differential methylation analysis failed. Exiting!"
+#if [ ! -s $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+if [ ! `ls $working_dir/$genome_id/diffMeth_*/*_diff_meth.tsv|wc -l` = $count ]; then
+	echo "Differential methylation analysis failed. Didn't find the expected number of diff_meth.tsv files ($count). Exiting!"
 	exit 1
 fi
+
+
+
 #---------------------DFFERENTIAL_METH_ANALYSIS_END--------------------------
 echo "Done."
