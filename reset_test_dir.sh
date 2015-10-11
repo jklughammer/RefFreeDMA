@@ -4,7 +4,7 @@ dir=$1
 
 shopt -s extglob
 
-read -p "Do you really want to reset the directory $dir (y/n)? " RESP
+read -p "ATTENTION:THIS WILL WIPE THE INDICATED DIRECTORY. Do you really want to reset the directory $dir (y/n)? " RESP
 if [ $RESP = "y" ]; then
   cd $dir
   rm -r !(meta|unmapped_bam) 2>/dev/null
