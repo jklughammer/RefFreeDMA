@@ -17,7 +17,7 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ```
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
-7\. View the most relevant results under `RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth`  
+7\. View the most relevant results under `RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth_cpg`  
 (8.) If you encounter problems please check the `RefFreeDMA_test/log` directory. It contains log files for each step.
 
 Dependencies
@@ -99,6 +99,10 @@ The sample annotation sheet has to contain at least two columns: Sample_Name and
 ###Input files/ working directory
 Input files are unmapped BAM files (one per sample). Input files have to be located or linked (`ln -s`) in a folder called unmapped_bam inside the specified working directory (working_dir). Input file names consist of either the sample name as specified in the sample annotation sheet or prefix (e.g. flowcell information) followed by the sample name. In the latter case prefix and sample name must be separated by a unique character sequence, which is to be specified as nameSeparator in the [default parameters](#adjust-default-parameters-if-required).
 
+###Analysing DNA methylation in non-CpG context
+RefFreeDMA has so far been used and tested extensively only for the analysis of differential DNA methylation in CpG context. However, setting the [nonCpG parameter](#set-variable-parameters) to TRUE will make RefFreeDMA run the same analysis on Cs in CHH and CHG context as for Cs in CpG context. Two more output folders (diffMeth_cphph and diffMeth_cphpg) will be produced. This feature has been tested and validated on simulated data.
+
+
 Running RefFreeDMA
 ------------------
 
@@ -131,7 +135,7 @@ samtools_path=$tool_path/samtools_1.2/bin/
 |parameter|proposed value|description|
 ----------|-------|-----------|
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
-|nProcesses|1|Maximum number of allowed parallel processes for mapping and methylation calling.|
+|nProcesses|4|Maximum number of allowed parallel processes for mapping and methylation calling.|
 |nameSeparator|"#"|Unique character(s) that separate flowcell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
 |maxReadLen|51|Actual maximum read length or if 3' cropping is desired for, max length of read after cropping.|
 |maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
@@ -168,7 +172,7 @@ sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample ann
 compCol|comp_gran_lympho|Column in the sample annotation file that specifies groups of samples for differential methylation analysis.|
 groupsCol|Cell_Type|Column in the sample annotation file that specifies groups of samples for plotting. Can be the same as compCol.|
 parallel|TRUE or FALSE|Should RefFreeDMA be run in parallel (TRUE) or linear (FALSE) mode|
-
+nonCpG|TRUE or FALSE|Should RefFreeDMA analyse DNA methylation also in CHH and CHG context|
 ```bash
 working_dir=PATH_TO_TESTDIR/RefFreeDMA_test
 species=Hum
