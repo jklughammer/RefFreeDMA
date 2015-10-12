@@ -181,6 +181,7 @@ sample_annotation=$working_dir/meta/sampleAnnotation.tsv
 compCol=comp_gran_lympho
 groupsCol=Cell_Type
 parallel=FALSE
+nonCpG=FALSE
 ```
 
 ###Adapt cluster submission 
