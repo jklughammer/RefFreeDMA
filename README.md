@@ -185,7 +185,7 @@ nonCpG=FALSE
 ```
 
 ###Adapt cluster submission 
-If run in parallel mode, RefFreeDMA submits the different tasks to the compute cluster instead of running them locally. The submit commands are valid for SLURM. If you are working with a different resource management system you need adjust the submit commands in RefFreeDMA.sh.
+If run in parallel mode, RefFreeDMA submits the different tasks to the compute cluster instead of running them locally. The submit commands are valid for SLURM. If you are working with a different resource management system you need to adjust the submit commands in RefFreeDMA.sh.
 The SLURM submit command is of the following structure:
 ```
 sbatch --export=ALL --get-user-env --job-name= --ntasks= --cpus-per-task= --mem-per-cpu= --partition= --time= -e -o
