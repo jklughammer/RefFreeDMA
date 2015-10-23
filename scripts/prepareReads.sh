@@ -79,6 +79,8 @@ if [ ! -f $trimmed_fastq ]; then
 	fi
 fi
 
+truncate -s0 $working_dir/fastq/*.fastq
+
 mkdir -p $working_dir/reduced
 
 #make unique based on unconverted sequences and only include reads that start with TGG in the converted form
