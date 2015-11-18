@@ -194,8 +194,12 @@ system.time({
 
 write.table(final,paste0(out_dir,in_file,"_final_all"),sep="\t",quote=FALSE,col.names=FALSE,row.names=FALSE)
 
-#remove all deducedReferences, that don't contain a CpG
-final=final[grepl("CG|GC",consensus)]
+#remove all deducedReferences, that don't contain a C
+final=final[grepl("C",consensus)]
+
+#remove leading As that came from Ns that became unnecessary after refining a cluster
+final[,consensus:=sub("^A*","",consensus),]
+
 write.table(final,paste0(out_dir,in_file,"_final"),sep="\t",quote=FALSE,col.names=FALSE,row.names=FALSE)
 
 
