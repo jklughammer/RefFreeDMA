@@ -112,7 +112,7 @@ for file in `ls $bam_dir/*.bam`; do
 	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=develop --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator"
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator"
 			sleep 0.01m
 			((submitted++))
 		else
