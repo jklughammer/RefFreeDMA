@@ -300,7 +300,7 @@ dev.off()
 #biplot on fragments (with labels)
 pcaSub=pca
 pcaSub$x=pcaSub$x[order(row.names(pcaSub$x)),]
-PC_annot=PC_annot[order(Sample_Name)]
+PC_annot=PC_annot[c(order(Sample_Name)),]
 
 #PC1 and PC2
 pcaSub$rotation=pca$rotation[order(sqrt((pca$rotation[,"PC1"])^2+(pca$rotation[,"PC2"])^2),decreasing=TRUE),][1:40,]
