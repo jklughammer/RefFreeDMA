@@ -447,7 +447,7 @@ for (i in 1:length(cov_trsh_l)){
     top_diff_data=sub_motif[p.val.adjust<0.05&mean.cov.g1>8&mean.cov.g2>8][1:min((nrow(sub_frag)/10),1000)]#[1:1000]
     if (nrow(na.omit(top_diff_data)) < 10) {top_diff_data=NULL}
     pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_motif.pdf"),width=6,height=5)
-    ggp_motif=ggplot(sub_motif,aes(x=mean.meth.g1,y=mean.meth.g2))+ stat_binhex(bins=30,col="white")+stat_binhex(data=top_diff_data, aes(x=mean.meth.g1,y=mean.meth.g2),bins=50,col="green",fill=NA) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_motif[,mean.meth.g1],sub_motif[,mean.meth.g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_motif)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_motif)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
+    ggp_motif=ggplot(sub_motif,aes(x=mean.meth.g1,y=mean.meth.g2))+ stat_binhex(bins=30,col="white")+geom_point(data=top_diff_data, aes(x=mean.meth.g1,y=mean.meth.g2),col="green",size=2,shape=21) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_motif[,mean.meth.g1],sub_motif[,mean.meth.g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_motif)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_motif)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
     print(ggp_motif)
     dev.off() 
   }
@@ -456,7 +456,7 @@ for (i in 1:length(cov_trsh_l)){
     top_diff_data=sub_frag[meth.pval_adj<0.05&meth.cov_mean_g1>8&meth.cov_mean_g2>8][1:min((nrow(sub_frag)/10),500)]#[1:500]
     if (nrow(na.omit(top_diff_data)) < 10) {top_diff_data=NULL}
     pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_frag.pdf"),width=6,height=5)
-    ggp_frag=ggplot(sub_frag,aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2))+ stat_binhex(bins=30,col="white") +stat_binhex(data=top_diff_data, aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),bins=50,fill=NA,col="green") + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_frag[,meth.meth_mean_g1],sub_frag[,meth.meth_mean_g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_frag)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_frag)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
+    ggp_frag=ggplot(sub_frag,aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2))+ stat_binhex(bins=30,col="white") +geom_point(data=top_diff_data, aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),col="green",size=2,shape=21) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_frag[,meth.meth_mean_g1],sub_frag[,meth.meth_mean_g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_frag)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_frag)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
     print(ggp_frag)
     dev.off()
    
