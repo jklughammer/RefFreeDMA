@@ -13,6 +13,7 @@ picard_path=$4
 trim_galore_path=$5
 cutadapt_path=$6
 nameSeparator=$7
+resMotifs=$8
 #-----------------------PATHS_END----------------------------
 
 
@@ -79,12 +80,18 @@ if [ ! -f $trimmed_fastq ]; then
 	fi
 fi
 
-truncate -s0 $working_dir/fastq/*.fastq
+truncate -s0 $out_fastq
 
 mkdir -p $working_dir/reduced
 
 #make unique based on unconverted sequences and only include reads that start with TGG in the converted form
-paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk '$3 ~ /^TGG/ && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+#paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk '$3 ~ /^TGG/ && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+
+convMotifs=`echo $resMotifs| awk '{gsub(/C/,"T");gsub("[|]","|^");print "^"$1}'`
+echo $convMotifs
+paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+
+
 
 echo "" > $working_dir/$new_name.done
 

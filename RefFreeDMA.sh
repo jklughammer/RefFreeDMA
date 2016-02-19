@@ -112,11 +112,11 @@ for file in `ls $bam_dir/*.bam`; do
 	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator"
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites
 			sleep 0.01m
 			((submitted++))
 		else
-			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' &> $logdir/prepareReads_${sample}.log" "$step"
+			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' $restrictionSites &> $logdir/prepareReads_${sample}.log" "$step"
 		fi
 	else
 		echo "${sample}_uniq.ref exists. Not submitted!"
@@ -286,10 +286,10 @@ count=0
 printf "$step"
 if [ ! -f $cons_dir/${sample}_final_rc ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=findRevComp_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/findRevComp_%j.err -o $logdir/findRevComp_%j.log $scripts/findRevComp.sh $cons_dir $sample $working_dir
+		sbatch --export=ALL --get-user-env --job-name=findRevComp_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/findRevComp_%j.err -o $logdir/findRevComp_%j.log $scripts/findRevComp.sh $cons_dir $sample $working_dir $restrictionSites
 		((count++))
 	else
-		get_proc_stats "$scripts/findRevComp.sh $cons_dir $sample $working_dir" "$step"
+		get_proc_stats "$scripts/findRevComp.sh $cons_dir $sample $working_dir $restrictionSites" "$step"
 	fi
 else
 	echo "${sample}_final_rc exists. Skipping!"
@@ -394,7 +394,7 @@ for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
 	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=12:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG
+			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=develop --time=12:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG
 			((submitted++))
 		else
 			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG &> $logdir/meth_calling_${sample}.log" "$step"
