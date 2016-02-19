@@ -123,8 +123,8 @@ command="$command \
 	--processCpHpG \
 	--processCpHpH"
 fi
-
-`$command`
+echo $command
+$command
 
 }
 
