@@ -134,6 +134,7 @@ samtools_path=$tool_path/samtools_1.2/bin/
 
 |parameter|proposed value|description|
 ----------|-------|-----------|
+|restrictionSites|"CGG"|Restriction sites (common 5' motif in RRBS reads). If multiple, specify them separated by pipe e.g. "CGG|CGA" for MspI|Taq1
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
 |nProcesses|4|Maximum number of allowed parallel processes for mapping and methylation calling.|
 |nameSeparator|"#"|Unique character(s) that separate flowcell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
