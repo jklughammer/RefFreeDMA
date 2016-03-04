@@ -39,13 +39,13 @@ print("Now collapsing reads...")
 for line in infile:
 	count = count + 1
 #reastart matching after encountering the last non TGG read (actually not needed, because non TGG reads are filtered out before (prepareReads.sh))
-	if (line.split("\t")[2].strip()[0:3] != "TGG") & (last_include == 0):
-		print("no TGG")
-		name = [line.split("\t")[0].strip()]
-		orig = [line.split("\t")[1].strip()]
-		conv = [line.split("\t")[2].strip()]
-		include = 0
-		continue
+#	if (line.split("\t")[2].strip()[0:3] != "TGG") & (last_include == 0):
+#		print("no TGG")
+#		name = [line.split("\t")[0].strip()]
+#		orig = [line.split("\t")[1].strip()]
+#		conv = [line.split("\t")[2].strip()]
+#		include = 0
+#		continue
 	if count == 1:
 		name = [line.split("\t")[0].strip()]
 		orig = [line.split("\t")[1].strip()]
