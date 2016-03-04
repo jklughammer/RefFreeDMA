@@ -262,7 +262,7 @@ count=0
 if [ ! -f $cons_dir/toSelf_*_final ]; then
 	rm $working_dir/*.done 2>/dev/null
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
+		sbatch --export=ALL --get-user-env --job-name=makeConsensus --nodelist=n003 --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
 		count=1
 	else
 		get_proc_stats "$scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit &> $logdir/makeConsensus_${sample}.log" "$step"
