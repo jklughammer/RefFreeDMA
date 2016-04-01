@@ -216,6 +216,7 @@ combineTestPvalsMeth<-function (pvalues, testWeights = NULL, correlated = FALSE,
 
 #read sample annptation
 sample_annot=fread(sampleAnnotation)
+sample_annot[sample_annot==""]=NA
 
 #read methylation data
 RRBSfiles=system(paste0("ls ",RRBSdir, "/*/*/*.bed"), intern=TRUE)
@@ -343,7 +344,7 @@ dev.off()
 #-------------------------------------------------------------------------
 
 present_samples=unlist(lapply(cols_dt$meth,function(x){unlist(strsplit(x,".meth"))[1]}))
-comp_matrix=sample_annot[!is.na(get(comp_col)),matrix(Sample_Name),by=get(comp_col)][V1%in%present_samples]
+comp_matrix=sample_annot[!is.na(get(comp_col)),matrix(Sample_Name),by=comp_col][V1%in%present_samples]
 
 setnames(comp_matrix,names(comp_matrix),c("group","sample"))
 comp_matrix[,meth.cols:=paste0(sample,".meth"),]
@@ -445,18 +446,23 @@ for (i in 1:length(cov_trsh_l)){
   if (nrow(sub_motif)>0){  
     size=4
     top_diff_data=sub_motif[p.val.adjust<0.05&mean.cov.g1>8&mean.cov.g2>8][1:min((nrow(sub_frag)/10),1000)]#[1:1000]
-    if (nrow(na.omit(top_diff_data)) < 10) {top_diff_data=NULL}
+    
     pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_motif.pdf"),width=6,height=5)
     ggp_motif=ggplot(sub_motif,aes(x=mean.meth.g1,y=mean.meth.g2))+ stat_binhex(bins=30,col="white")+geom_point(data=top_diff_data, aes(x=mean.meth.g1,y=mean.meth.g2),col="green",size=2,shape=21) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_motif[,mean.meth.g1],sub_motif[,mean.meth.g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_motif)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_motif)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
+    
+    if (nrow(na.omit(top_diff_data)) < 10) {
+      ggp_motif=ggp_motif+geom_point(data=top_diff_data, aes(x=mean.meth.g1,y=mean.meth.g2),col="green",size=2,shape=21)}
     print(ggp_motif)
     dev.off() 
   }
   if (nrow(sub_frag)>0){
     size=4
     top_diff_data=sub_frag[meth.pval_adj<0.05&meth.cov_mean_g1>8&meth.cov_mean_g2>8][1:min((nrow(sub_frag)/10),500)]#[1:500]
-    if (nrow(na.omit(top_diff_data)) < 10) {top_diff_data=NULL}
+    
     pdf(paste0(out_dir,"/diffMeth_",comp[1],"-",comp[2],"_",cov_trsh_l[i],"-",cov_trsh_u[i],"_frag.pdf"),width=6,height=5)
     ggp_frag=ggplot(sub_frag,aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2))+ stat_binhex(bins=30,col="white") +geom_point(data=top_diff_data, aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),col="green",size=2,shape=21) + annotate("text",size=size,x=90,y=10,label=paste0("r = ",round(cor(sub_frag[,meth.meth_mean_g1],sub_frag[,meth.meth_mean_g2]),3),"\n cov>= ",cov_trsh_l[i], "\n cov <=",cov_trsh_u[i] ,"\nN = ",dim(sub_frag)[1])[1])+scale_fill_gradient(limits=c(0,nrow(sub_frag)/200),high="blue",low="white",na.value="blue")+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+xlab(paste0("% methylation ",comp[1]))+ylab(paste0("% methylation ",comp[2]))+xlim(0,100)+ylim(0,100)
+    if (nrow(na.omit(top_diff_data)) < 10) {
+      ggp_frag=ggp_frag+geom_point(data=top_diff_data, aes(x=meth.meth_mean_g1,y=meth.meth_mean_g2),col="green",size=2,shape=21)}
     print(ggp_frag)
     dev.off()
    
@@ -488,21 +494,24 @@ bottom_all=diffTab_ref.ordered[meth.cov_mean_g1>=cov_thres& meth.cov_mean_g2>=co
 bottom1=bottom_all[(nrow(bottom_all)-min(top_threshold,nrow(top1_all))):nrow(bottom_all)]$dedRef_ID
 bottom2=bottom_all[(nrow(bottom_all)-min(top_threshold,nrow(top2_all))):nrow(bottom_all)]$dedRef_ID
 
-top_fa1=fasta[top1]
-top_fa2=fasta[top2]
-bottom_fa1=fasta[bottom1]
-bottom_fa2=fasta[bottom2]
+system("mkdir -p motifAnalysis")
+
+if (length(na.omit(top1))>0){
+  top_fa1=fasta[top1]
+  writeXStringSet(top_fa1,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))
+  bottom_fa1=fasta[bottom1]
+  writeXStringSet(bottom_fa1,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))}else{message("No significantly hypermethylated fragments for ",comp[1])}
+if (length(na.omit(top2))>0){
+  top_fa2=fasta[top2]
+  writeXStringSet(top_fa2,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))
+  bottom_fa2=fasta[bottom2]
+  writeXStringSet(bottom_fa2,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))}else{message("No significantly hypermethylated fragments for ",comp[2])}
+
 
 
 stats=rbind(stats,data.frame(assay="diffMeth",condition=c(paste0(groups[1],"_methHi"),paste0(groups[2],"_methHi")),percent=c(nrow(top1_all)/nrow(diffTab_ref.ordered),nrow(top2_all)/nrow(diffTab_ref.ordered)),number=c(nrow(top1_all),nrow(top2_all)),correlation=NA))
 
-system("mkdir -p motifAnalysis")
-writeXStringSet(top_fa1,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))
-writeXStringSet(top_fa2,paste0("motifAnalysis/","ded_top",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))
-writeXStringSet(bottom_fa1,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[1],".fa"))
-writeXStringSet(bottom_fa2,paste0("motifAnalysis/","ded_bottom",top_threshold,"_cov",cov_thres,"_",groups[2],".fa"))
 writeXStringSet(fasta,paste0("motifAnalysis/","allDeducedGenomeFragments.fa"))
-
 write.table(stats,paste0(out_dir,"/",species,"_diffMeth_stats.tsv"),quote=FALSE,sep="\t",row.names=FALSE)
 }
 
