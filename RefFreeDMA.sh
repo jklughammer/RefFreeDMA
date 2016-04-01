@@ -52,11 +52,11 @@ fi
 #-----------------------FUNCTIONS_START------------------------
 function wait_for_slurm {
 	wait_time=$1
-	count=$2
+	submitted=$2
 	working_dir=$3
 	
 	echo "wait_time $wait_time"
-	echo "count $count"
+	echo "submitted $submitted"
 #	echo "wd $working_dir"
 	
 	
@@ -67,7 +67,7 @@ function wait_for_slurm {
 	done
 
 	no=`ls $working_dir/*.done|wc -w`
-	while [ $no -lt $count ]
+	while [ $no -lt $submitted ]
 	do
 		no=`ls $working_dir/*.done|wc -w`
 		echo "waiting till all jobs are finished... $no done"
@@ -89,7 +89,7 @@ eval "/usr/bin/time -o $logdir/time --append -f 'command: %C\ntime(sec): %e(real
 #-----------------------BASIC_CHECKS_START-------------------------
 
 if [[ $working_dir =~ "__" ]]; then 
-echo "The string '__' was found the working_dir path. This is not allowed!"
+echo "The string '__' was found in the working_dir path. This is not allowed!"
 exit 1
 fi
 
@@ -112,7 +112,7 @@ for file in `ls $bam_dir/*.bam`; do
 	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path
 			sleep 0.01m
 			((submitted++))
 		else
@@ -488,7 +488,7 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 	fi
 rm $working_dir/*.done 2>/dev/null
-#if [ ! -s $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+
 if [ ! `ls $working_dir/$genome_id/diffMeth_*/*_diff_meth.tsv|wc -l` = $count ]; then
 	echo "Differential methylation analysis failed. Didn't find the expected number of diff_meth.tsv files ($count). Exiting!"
 	exit 1
