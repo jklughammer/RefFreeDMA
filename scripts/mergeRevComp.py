@@ -11,6 +11,7 @@ from Bio.Alphabet import generic_dna
 infile_name = str(sys.argv[1])  # needs ordered input (by sequence length)
 working_dir=str(sys.argv[2])
 
+
 infile = open(infile_name, 'r')
 outfile = open(infile_name + "-res", 'w')
 
@@ -43,6 +44,7 @@ for line in infile:
 	FW[name] = [fw_seq, seq]
 	count = count + 1
 
+
 print("now finding matches...")
 origEntries = len(FW)
 count = 0
@@ -70,8 +72,9 @@ for fw_key, fw_both in FW.iteritems():
 				similarity[RC_rev_key]= 0
 				RC_rev_val_l = list(str(Seq(RC_rev_val, generic_dna).reverse_complement()))
 				for i in range(0,len(fw_orig_l)-1):
-					if (fw_orig_l[i] == "T" and rw_orig_l[i] in ["T","C"]) or (fw_orig_l[i] == "C" and rw_orig_l[i] in ["C"])\
-							or (fw_orig_l[i] == "G" and rw_orig_l[i] in ["G","A"])or (fw_orig_l[i] == "A" and rw_orig_l[i] in ["A"]):
+					if (fw_orig_l[i] == "T" and RC_rev_val_l[i] in ["T","C"]) or (fw_orig_l[i] == "C" and RC_rev_val_l[i] in ["C"])\
+							or (fw_orig_l[i] == "G" and RC_rev_val_l[i] in ["G","A"])or (fw_orig_l[i] == "A" and RC_rev_val_l[i] in ["A"]):
+
 						similarity[RC_rev_key]+= 1
 			rw_key = max(similarity)
 		else:
