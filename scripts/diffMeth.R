@@ -61,9 +61,9 @@ collectMethData=function(dir,motif){
 	type=unlist(strsplit(file,"/|\\.bed"))
 	type=type[length(type)-1]}
 	
-    
 	print(type)
     input=fread(file)
+    input=unique(input)
     input[,V4:=gsub("'","",V4),]
     spl=unlist(strsplit(input$V4,"/"))
     cov.idx=seq(1,length(spl),by=2)
