@@ -104,8 +104,8 @@ all_num="counts"
 all_motifs="motifs"
 all_sum=0
 for motif in "${resMotif_array[@]}";do 
-	motifComplete="${motif/C/[CT]}"
-	motifT="${motif/C/T}"
+	motifComplete="${motif//C/[CT]}"
+	motifT="${motif//C/T}"
 num=`$samtools_path/samtools view $in_file|grep -P "\t$motifComplete"|wc -l`
 
 num_c=`$samtools_path/samtools view $in_file|grep -P "\t$motif"|wc -l`
