@@ -8,7 +8,7 @@ cons_dir=$1
 sample=$2
 working_dir=$3
 resMotifs_orig=$4
-resMotifs=${resMotifs_orig/"|"/"\|"}
+resMotifs=${resMotifs_orig//"|"/"\|"}
 
 #grep -v -P "\t[CT]GG.*[CT][CT]G\t" $cons_dir/${sample}_final>$cons_dir/${sample}_final_norc
 #grep -P "\t[CT]GG.*[CT][CT]G\t" $cons_dir/${sample}_final| sort -k 2,2 -t$'\t'|awk '{ print length($2), $0 | "sort -n" }'|cut -d" " -f2 >$cons_dir/${sample}_final_rc
