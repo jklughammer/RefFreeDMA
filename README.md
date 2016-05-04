@@ -3,6 +3,8 @@ Reference Genome Independent Differential DNA Methylation Analysis
 
 RefFreeDMA is a pipeline to perform genome-wide, high-resolution, differential methylation analysis without the need of a reference genome. RefFreeDMA deduces relevant genomic sequences from standard reduced representation bisulfite sequencing (RRBS) reads and concatenates them into a deduced genome which is then used for differential methylation analysis. RefFreeDMA performs all steps of differential DNA methylation analysis from the raw RRBS data over the creation of a deduced reference genome to differential methylation calling.
 
+See also: http://www.ncbi.nlm.nih.gov/pubmed/26673328
+
 Quick start
 -----------
 __Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file, and the configuration file. RefFreeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh PATH_TO_TESTDIR/RefFreeDMA_test`. 
