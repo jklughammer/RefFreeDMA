@@ -72,7 +72,7 @@ collectMethData=function(dir,motif){
     #input[,V5:=V5/10,] #calculate new from ration because of bug in chh and chg methylation calling in biseqMehcalling (not for CpG meth though)
     input[,V5:=V8/V7*100,]
     input[,V4:=NULL,]
-    setnames(input,names(input),c("chr","start","end",paste0(type,".meth"),"strand",paste0(type,".cov"),paste0(type,".reads.meth")))
+    setnames(input,names(input),c("chr","start","end",paste0(type,".meth"),"strand",paste0(type,".cov"),paste0(type,".reads_meth")))
     if (is.null(Meth_bed)){Meth_bed=input}
     else {Meth_bed=merge(Meth_bed,input,by=c("chr","start","end","strand"),all=TRUE)}    
   }
@@ -272,7 +272,7 @@ merge2_meth=merge(merge1_meth,Meth_bed,by="meth.ID",all.x=TRUE)
 
 
 # combine methylation values uning a weighted mean
-cols_dt=data.table(meth=grep("[^s].meth",colnames(Meth_bed),value=TRUE),cov=grep(".cov",colnames(Meth_bed),value=TRUE))
+cols_dt=data.table(meth=grep("\\.meth",colnames(Meth_bed),value=TRUE),cov=grep("\\.cov",colnames(Meth_bed),value=TRUE))
 
 cols_dt[,command:=paste0(meth,"=weighted.mean(",meth,",",cov,",na.rm=TRUE)",",",cov,"=mean(",cov,",na.rm=TRUE)"),]
 command_weighted_mean=paste0("list(",paste0(cols_dt$command,collapse=","),")")
