@@ -20,7 +20,7 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
 7\. View the most relevant results under `RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth_cpg`  
-(8.) Get summary statistics (`RefFreeDMA_test/summary.txt`). 
+(8.) Get summary statistics (`RefFreeDMA_test/summary.txt`) by running: 
 ```
 ./scripts/parse_stats.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
