@@ -15,6 +15,7 @@ cutadapt_path=$6
 nameSeparator=$7
 resMotifs=$8
 samtools_path=$9
+selected=${10}
 #-----------------------PATHS_END----------------------------
 
 
@@ -83,14 +84,26 @@ fi
 
 truncate -s0 $out_fastq
 
-mkdir -p $working_dir/reduced
+#check which samples should be included for reference building
 
-#make unique based on unconverted sequences and only include reads that start with TGG in the converted form
-#paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk '$3 ~ /^TGG/ && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+sample_name=`echo $new_name|awk 'BEGIN{FS="__"}{print $2}'`
+echo $sample_name
+printf $selected
 
-convMotifs=`echo $resMotifs| awk '{gsub(/C/,"T");gsub("[|]","|^");print "^"$1}'`
-echo $convMotifs
-paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+
+#if [ `echo $selected|grep -c $sample_name` == 1 ]
+if [[ $selected =~ .*"|$sample_name|".* ]];then
+	echo "$sample_name is selected for reference generation!"
+	mkdir -p $working_dir/reduced
+
+	#make unique based on unconverted sequences and only include reads that start with TGG in the converted form
+	convMotifs=`echo $resMotifs| awk '{gsub(/C/,"T");gsub("[|]","|^");print "^"$1}'`
+	echo $convMotifs
+	paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+else
+	echo "$sample_name not selected for reference generation!"
+fi
+
 
 echo "" > $working_dir/$new_name.done
 

@@ -102,6 +102,10 @@ fi
 #convert .bam files to .fastq files and trimm reads (quality and adapter)
 step="\n-------Read preparation-------\n"
 printf "$step"
+
+selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Name"){n=i}}} NR>1{if($s==1) {printf "|"$n"|"}}' $sample_annotation`
+printf "Samples selected for reference generation:\n$selected\n"
+
 count=0
 submitted=0
 rm $working_dir/*.done 2>/dev/null
@@ -112,11 +116,11 @@ for file in `ls $bam_dir/*.bam`; do
 	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path "$selected"
 			sleep 0.01m
 			((submitted++))
 		else
-			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' $restrictionSites &> $logdir/prepareReads_${sample}.log" "$step"
+			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' '$restrictionSites' '$samtools_path' '$selected' &> $logdir/prepareReads_${sample}.log" "$step"
 		fi
 	else
 		echo "${sample}_uniq.ref exists. Not submitted!"
@@ -127,8 +131,8 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 shopt -s extglob
-if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $count ]; then
-	echo "Didn't find the expected number of uniq.ref files ($count). Exiting!"
+if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $maxSamples ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
+	echo "Didn't find the expected number of uniq.ref files ($maxSamples) or trimmed.fq files ($count). Exiting!"
 	exit 1
 fi
 shopt -u extglob
@@ -289,7 +293,7 @@ if [ ! -f $cons_dir/${sample}_final_rc ]; then
 		sbatch --export=ALL --get-user-env --job-name=findRevComp_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/findRevComp_%j.err -o $logdir/findRevComp_%j.log $scripts/findRevComp.sh $cons_dir $sample $working_dir $restrictionSites
 		((count++))
 	else
-		get_proc_stats "$scripts/findRevComp.sh $cons_dir $sample $working_dir $restrictionSites" "$step"
+		get_proc_stats "$scripts/findRevComp.sh $cons_dir $sample $working_dir '$restrictionSites'" "$step"
 	fi
 else
 	echo "${sample}_final_rc exists. Skipping!"
