@@ -20,7 +20,11 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ./RefFreeDMA.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
 7\. View the most relevant results under `RefFreeDMA_test/toSelf_filtered_0.08mm_concat/diffMeth_cpg`  
-(8.) If you encounter problems please check the `RefFreeDMA_test/log` directory. It contains log files for each step.
+(8.) Get summary statistics (`RefFreeDMA_test/summary.txt`). 
+```
+./scripts/parse_stats.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
+```
+(9.) If you encounter problems please check the `RefFreeDMA_test/log` directory. It contains log files for each step.
 
 Dependencies
 ------------
@@ -86,16 +90,16 @@ Reference genomes for cross-mapping should be provided as one fasta file contain
 
 ###Sample annotation sheet
 
-The sample annotation sheet has to contain at least two columns: Sample_Name and a column that specifies the **two** groups to be compared in the differential methylation analysis. Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A third column can be specified to indicate groups for plotting purposes. The only predefined column name is Sample_Name. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
+The sample annotation sheet has to contain at least three columns: Sample_Name, a column that specifies the **two** groups to be compared in the differential methylation analysis and a column that specifies which samples are to be used for the generation of the deduced reference (1 = use; 0 = don't use). Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A fourth column can be specified to indicate groups for plotting purposes. The only two predefined column names are Sample_Name and Select. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
 
-| Sample_Name  |comp_gran_lympho|Cell_Type| XXX  | YYY  |
-|---|---|---|---|---|
-|Sample1|NA|monocyte|   |   |
-|Sample2|NA|monocyte|   |   |
-|Sample3|granulocyte|granulocyte|   |   |
-|Sample4|granulocyte|granulocyte|   |   |
-|Sample5|lymphocyte|lymphocyte|   |   |
-|Sample6|lymphocyte|lymphocyte|   |   |
+| Sample_Name  |comp_gran_lympho|Cell_Type|Select| XXX  | YYY  |
+|---|---|---|---|---|---|
+|Sample1|NA|monocyte|1|   |   |
+|Sample2|NA|monocyte|1|   |   |
+|Sample3|granulocyte|granulocyte|0|   |   |
+|Sample4|granulocyte|granulocyte|0|   |   |
+|Sample5|lymphocyte|lymphocyte|1|   |   |
+|Sample6|lymphocyte|lymphocyte|1|   |   |
 
 
 ###Input files/ working directory
@@ -141,7 +145,7 @@ samtools_path=$tool_path/samtools_1.2/bin/
 |nProcesses|4|Maximum number of allowed parallel processes for mapping and methylation calling.|
 |nameSeparator|"#"|Unique character(s) that separate flowcell ID from sample name (as indicated in the sample annotation sheet) in the bam-file name. If the bam-file name consists only of the sample name put ""|
 |maxReadLen|51|Actual maximum read length or if 3' cropping is desired for, max length of read after cropping.|
-|maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to any desired number.|
+|maxSamples|10-20|Per default use all samples that are provided as .bam files in the unmapped_bam folder. Change this parameter to the number of samples you selected in the sample annotation file (Select column) if the deduced reference is to be produced with only a subset of samples.|
 |filtLim|4|Only consider reads for the generation of the deduced genome that occur at least in 2 out of filtLim samples.|
 |cLimit|0.05|Minimum frequency of cytosines at a certain position in order to call a cytosine in the consensus sequence.
 |mapToSelf_filter|0.08|Only accept hits as true matches where the mismatch rate is < mapToSelf_filter|
