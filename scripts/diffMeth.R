@@ -58,8 +58,7 @@ collectMethData=function(dir,motif){
   for (file in RRBSfiles){
     if (grepl("__",file)==TRUE){
 	type=unlist(strsplit(file,"__|\\.bed"))[3]}else{
-	type=unlist(strsplit(file,"/|\\.bed"))
-	type=type[length(type)-1]}
+	type=unlist(strsplit(file,"Methylation_|\\.bed"))[2]}
 	
 	print(type)
     input=fread(file)
@@ -218,13 +217,9 @@ combineTestPvalsMeth<-function (pvalues, testWeights = NULL, correlated = FALSE,
 sample_annot=fread(sampleAnnotation)
 sample_annot[sample_annot==""]=NA
 
-#read methylation data
-RRBSfiles=system(paste0("ls ",RRBSdir, "/*/*/*.bed"), intern=TRUE)
 
-#add bed file location to sample annotation 
-RRBSfiles_tab=data.table(Sample_Name=unlist(lapply(RRBSfiles,function(x){unlist(strsplit(x,"__|\\."))[3]})),location=RRBSfiles)
 #combine meth bed files by caching (Nathan)
-simpleCache(recreate=FALSE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
+simpleCache(recreate=TRUE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
 Meth_bed=get(paste0(motif,"_combinedMeth_",species))
 #deduced geneome fragment .bed file
 refBed_DT=fread(paste0("reduced/consensus/",RRBSdir,".bed"))

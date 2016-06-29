@@ -108,6 +108,7 @@ fi
 echo "" > $working_dir/$new_name.done
 
 #now check restriction digest efficiency (this is independent of the rest of the pipeline)
+
 total_reads=`$samtools_path/samtools view $in_file|wc -l`
 echo "total_reads\t$total_reads" > $working_dir/fastq/$new_name.stats
 
