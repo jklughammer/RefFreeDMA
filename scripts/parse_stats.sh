@@ -13,11 +13,49 @@ convCtr_dir="conversionCtr"
 summary_dir=$working_dir
 
 
+#remove preexisting file
+rm $summary_dir/summary.txt
+
+#get number of fragments in the deduced genome
+frag_file=$working_dir/reduced/consensus/toSelf_filtered_${mapToSelf_filter}mm_final
+total_frags=`cat $frag_file| wc -l`
+
+IFS='|' read -a resMotif_array <<<"$restrictionSites"
+
+all_num="counts"
+all_motifs="motifs"
+all_sum=0
+for motif in "${resMotif_array[@]}";do 
+	motifComplete="${motif//C/[CT]}"
+	motifT="${motif//C/T}"
+num=`grep -P "\t$motifComplete" $frag_file|wc -l`
+
+num_c=`grep -P "\t$motif" $frag_file|wc -l`
+num_t=`grep -P "\t$motifT" $frag_file|wc -l`
+
+perc_c=`printf "%.2f" $(echo "100*$num_c/$total_frags"|bc -l)`
+perc_t=`printf "%.2f" $(echo "100*$num_t/$total_frags"|bc -l)`
+
+all_sum=`echo "$all_sum+$num"|bc`
+
+all_num="$all_num\t$num\t$perc_c\t$perc_t"
+all_motifs="$all_motifs\t$motifComplete\t$motif\t$motifT"
+done
+
+all_sum_perc=`printf "%.2f" $(echo "100*($total_frags-$all_sum)/$total_frags"|bc -l)`
+
+all_num="$all_num\t$all_sum_perc"
+all_motifs="$all_motifs\tothers"
+
+echo -e $all_motifs> $summary_dir/ref_summary.txt
+echo -e $all_num>> $summary_dir/ref_summary.txt
+
+#now analyse each sample
 dir=$working_dir/$analysis_dir
 for sample in `ls -d $dir/BSF*`; do
 sample=$(basename $sample)
-sample_name=`echo $sample | awk -F'__' '{print $2}'`
-
+sample_name=${sample/*__/""}
+echo $sample
 #mapped flagstat
 total_reads=`awk 'NR==1' $dir/$sample/*flagstat|cut -f1 -d " "`
 mapped_reads=`awk 'NR==5' $dir/$sample/*flagstat|cut -f1 -d " "`
