@@ -3,7 +3,6 @@
 #Author: Johanna Klughammer
 #Date: 26.07.2015
 
-
 #-----------------------PATHS_START----------------------------
 working_dir=$1
 bam_dir=$working_dir/unmapped_bam
@@ -17,6 +16,16 @@ resMotifs=$8
 samtools_path=$9
 selected=${10}
 #-----------------------PATHS_END----------------------------
+
+
+
+#-----------------------PREPS_START----------------------------
+#create and set tempdir, sothat processes don't clash
+tempdir=$working_dir/TEMP/$(basename $in_file .bam)
+mkdir -p $tempdir
+export TMPDIR=$tempdir
+
+#-----------------------PREPS_START----------------------------
 
 
 
@@ -56,6 +65,11 @@ function trim_galore {
 #-----------------------FUNCTIONS_END------------------------
 
 
+#----------------DETERMINE_READ_LENGTH--------------------------------
+read=`$samtools_path/samtools view $in_file|head -n1|cut -f10`
+readlen="${#read}"
+echo "Determined read lenth is $readlen" 
+
 
 #----------------PREPARE_READS--------------------------------
 mkdir -p $working_dir/fastq
@@ -76,7 +90,7 @@ if [ ! -f $trimmed_fastq ]; then
 	trim_galore $out_fastq $working_dir/fastq/
 	
 	# additionnally top reads at desired maxReadLen
-	if [ $maxReadLen -ne 51 ]; then
+	if [ $maxReadLen -lt $readlen ]; then
 		awk -v top=$maxReadLen '{if(NR%4==2||NR%4==0){print substr($0,1,top)}else{print}}' $trimmed_fastq > $working_dir/fastq/${new_name}_temp
 		mv $working_dir/fastq/${new_name}_temp $trimmed_fastq
 	fi
@@ -100,6 +114,10 @@ if [[ $selected =~ .*"|$sample_name|".* ]];then
 	convMotifs=`echo $resMotifs| awk '{gsub(/C/,"T");gsub("[|]","|^");print "^"$1}'`
 	echo $convMotifs
 	paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
+	if [ ! -s $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref ];then
+		rm $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref		
+	fi
+
 else
 	echo "$sample_name not selected for reference generation!"
 fi
@@ -142,6 +160,6 @@ all_motifs="$all_motifs\tothers"
 echo $all_motifs>> $working_dir/fastq/$new_name.stats
 echo $all_num>> $working_dir/fastq/$new_name.stats
 
-
+rm -r $tempdir
 
 

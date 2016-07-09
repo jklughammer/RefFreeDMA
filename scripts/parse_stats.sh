@@ -12,6 +12,8 @@ convCtr_dir="conversionCtr"
 
 summary_dir=$working_dir
 
+#samples=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Sample_Name"){n=i}}} NR>1{print $n}' $sample_annotation` 
+#echo "Samples: "$samples
 
 #remove preexisting file
 rm $summary_dir/summary.txt
@@ -44,15 +46,24 @@ done
 
 all_sum_perc=`printf "%.2f" $(echo "100*($total_frags-$all_sum)/$total_frags"|bc -l)`
 
-all_num="$all_num\t$all_sum_perc"
-all_motifs="$all_motifs\tothers"
+#samples used for reference generation
+shopt -s extglob
+num_samples=`ls $working_dir/reduced/!(merged)_uniq.ref|wc -l`
+shopt -u extglob
+
+all_num="$all_num\t$total_frags\t$all_sum_perc\t$num_samples\t$species"
+all_motifs="$all_motifs\ttotal\tothers\tsamples\tspecies"
 
 echo -e $all_motifs> $summary_dir/ref_summary.txt
 echo -e $all_num>> $summary_dir/ref_summary.txt
 
 #now analyse each sample
 dir=$working_dir/$analysis_dir
-for sample in `ls -d $dir/BSF*`; do
+shopt -s extglob
+subdirs=`ls -d $dir/!(diffMeth_*)/`
+shopt -u extglob
+
+for sample in $subdirs; do
 sample=$(basename $sample)
 sample_name=${sample/*__/""}
 echo $sample
