@@ -21,7 +21,7 @@ nonCpG=${10}
 samtools_path=$6
 bsmap_path=$7
 biseq_path=$8
-
+scripts=${11}
 # -----------------------------------------
 # bsmap
 # -----------------------------------------
@@ -137,14 +137,21 @@ $command
 align_dir=$analysis_dir/$ref_genome_name/$sample
 
 mkdir -p $align_dir
-
 mismatches=0.08
 allow_multimapper=1
 bsmap_aligned_bam=$align_dir/$sample.all.aligned.bsmap.$mismatches.mism.$allow_multimapper.r.bam
-run_bsmap $unmapped_fastq $bsmap_aligned_bam $ref_genome_fasta $mismatches
+if [ ! -f $bsmap_aligned_bam ]; then
+	run_bsmap $unmapped_fastq $bsmap_aligned_bam $ref_genome_fasta $mismatches
+fi
 
 # --- Methylation Analysis: biseq ---
-biseq  $sample $bsmap_aligned_bam $ref_genome_name $align_dir $ref_genome_fasta
+if [ ! -f $align_dir/biseqMethcalling/RRBS_cpgMethylation_$sample.bed ]; then
+	biseq  $sample $bsmap_aligned_bam $ref_genome_name $align_dir $ref_genome_fasta
+fi
 
 echo "" > $analysis_dir/${sample}.done
+
+#---check read ristribution---
+Rscript $scripts/checkReadDistribution.R $align_dir/biseqMethcalling $sample
+
 
