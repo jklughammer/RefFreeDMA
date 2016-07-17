@@ -100,13 +100,17 @@ truncate -s0 $out_fastq
 
 #check which samples should be included for reference building
 
-sample_name=`echo $new_name|awk 'BEGIN{FS="__"}{print $2}'`
-echo $sample_name
-printf $selected
+if [[ $new_name =~ "__" ]]; then
+	sample_name=`echo $new_name|awk 'BEGIN{FS="__"}{print $2}'`
+else
+	sample_name=$new_name
+fi
 
+ echo $sample_name
+ echo "$selected"
 
-#if [ `echo $selected|grep -c $sample_name` == 1 ]
-if [[ $selected =~ .*"|$sample_name|".* ]];then
+# if [ `echo $selected|grep -c "|$sample_name|"` == 1 ];then
+if [[ "$selected" =~ .*"|$sample_name|".* ]];then
 	echo "$sample_name is selected for reference generation!"
 	mkdir -p $working_dir/reduced
 
@@ -121,6 +125,7 @@ if [[ $selected =~ .*"|$sample_name|".* ]];then
 else
 	echo "$sample_name not selected for reference generation!"
 fi
+
 
 
 echo "" > $working_dir/$new_name.done
