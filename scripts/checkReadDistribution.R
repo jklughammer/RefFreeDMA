@@ -8,7 +8,7 @@ sample=args[2]
 #wd="/scratch/lab_bock/jklughammer/projects/Zebrafinch/toSelf_filtered_0.08mm_final_concat/BSF_0185_H3GLTBBXX_4__G1AV207_2A/biseqMethcalling/"
 setwd(wd)
 
-cpgReads=fread(paste0("RRBS_cpgReads_",sample,".bed"),drop=c(4,7,8,9,11,12,13))
+cpgReads=fread(paste0("RRBS_cpgReads_",sample,".bed"),drop=c(4,7,8,9,11,12,13),sep="\t")
 setnames(cpgReads,names(cpgReads),c("chr","start","end","meth","orientation","Nmotifs"))
 cpgReads[,coverage:=.N,by=c("chr","start")]
 cpgReads[,coverage_topped_1000:=ifelse(coverage<1000,coverage,1000),]
