@@ -371,6 +371,23 @@ for (i in 1:length(comp_matrix)){
 	}
 }
 
+#-----------------------------------------------------------------
+#Calculate concordance in motif coverage between different samples
+#-----------------------------------------------------------------
+sampleCombies=as.data.table(t(combn(sample_annot$Sample_Name,2)))
+sampleCombies[,overlap:=nrow(na.omit(Meth_bed[,c(paste0(V1,".meth"),paste0(V2,".meth")),with=FALSE])),by=1:nrow(sampleCombies)]
+
+sampleCombies_extended=rbindlist(list(sampleCombies,with(sampleCombies,data.table(V1=V2,V2=V1,overlap=overlap))))
+overlap_stats=sampleCombies_extended[,list(mean_overlap=mean(overlap),min_overlap=min(overlap),max_overlap=max(overlap),min_sample=V2[which.min(overlap)],max_sample=V2[which.max(overlap)]),by="V1"]
+setnames(overlap_stats,"V1","Sample_Name")
+
+write.table(overlap_stats,paste0(out_dir,"/",species,"_overlap_stats.tsv"),quote=FALSE,sep="\t",row.names=FALSE)
+
+sampleCombies_extended[,V1:=factor(V1,levels=overlap_stats[order(mean_overlap)]$Sample_Name),]
+sampleCombies_extended[,V2:=factor(V2,levels=overlap_stats[order(mean_overlap)]$Sample_Name),]
+pdf(paste0(out_dir,"/overlap_stats.pdf"),height=4,width=5)
+ggplot(sampleCombies_extended,aes(x=V1,y=V2,fill=overlap))+geom_tile()+xlab("")+ylab("")+theme(axis.text.x  = element_text(angle=90, vjust=0.5))
+dev.off()
 #------------------------------------------------------------------
 #differential methylation analysis using limmaP from RnBeads
 #------------------------------------------------------------------
