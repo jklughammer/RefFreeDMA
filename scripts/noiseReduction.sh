@@ -30,9 +30,10 @@ for file in `ls *_uniq.ref`; do
 done 
 
 if [ -f merged.ref ]; then
+	echo "filling up to filtLim"
 	allFiles=(`ls *_uniq.ref`)
-	missing=`echo "$filtLim-$filesCount"|bc`
-	for i in `seq 1 $missing`; do
+	missing=`echo "$filtLim-$filesCount-1"|bc`
+	for i in `seq 0 $missing`; do
 		echo ${allFiles[i]}
 		cat ${allFiles[i]} >> merged.ref
 	done

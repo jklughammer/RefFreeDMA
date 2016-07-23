@@ -238,7 +238,7 @@ count=0
 printf "$step"
 if [ ! -f $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
+		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
 		((count++))
 	else
 		get_proc_stats "$scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir" "$step"
