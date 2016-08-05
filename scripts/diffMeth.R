@@ -385,7 +385,7 @@ write.table(overlap_stats,paste0(out_dir,"/",species,"_overlap_stats.tsv"),quote
 
 sampleCombies_extended[,V1:=factor(V1,levels=overlap_stats[order(mean_overlap)]$Sample_Name),]
 sampleCombies_extended[,V2:=factor(V2,levels=overlap_stats[order(mean_overlap)]$Sample_Name),]
-pdf(paste0(out_dir,"/overlap_stats.pdf"),height=4,width=5)
+pdf(paste0(out_dir,"/",species,"_overlap_stats.pdf"),height=4,width=5)
 ggplot(sampleCombies_extended,aes(x=V1,y=V2,fill=overlap))+geom_tile()+xlab("")+ylab("")+theme(axis.text.x  = element_text(angle=90, vjust=0.5))
 dev.off()
 #------------------------------------------------------------------

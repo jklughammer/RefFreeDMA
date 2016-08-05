@@ -256,7 +256,7 @@ if [ ! -s $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
 	exit 1
 fi
 
-# Account for SNPs
+# Account for SNPs for ~300GB give 90000 mem per cpu
 step="\n-------Accurate consensus finding-------\n"
 printf "$step"
 sample=toSelf_filtered_${mapToSelf_filter}mm
@@ -331,7 +331,7 @@ if [ ! -s $cons_dir/${sample}_final_rc-res ]; then
 	exit 1
 fi
 
-#concatenate
+#concatenate give 10000 for genomes with ~5M fragments
 step="\n-------Concatenating deduced genome fragments-------\n"
 count=0
 printf "$step"
