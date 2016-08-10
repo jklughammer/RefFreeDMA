@@ -15,16 +15,19 @@ nameSeparator=$7
 resMotifs=$8
 samtools_path=$9
 selected=${10}
+decon=${11}
+bwaMeth_path=${12}
+decon_reference=${13}
+tempdir=${14}
+
 #-----------------------PATHS_END----------------------------
 
 
 
 #-----------------------PREPS_START----------------------------
-#create and set tempdir, sothat processes don't clash
-tempdir=$working_dir/TEMP/$(basename $in_file .bam)
-mkdir -p $tempdir
+#set tempdir, sothat processes don't clash
+echo "TEMPDIR: $tempdir"
 export TMPDIR=$tempdir
-
 #-----------------------PREPS_START----------------------------
 
 
@@ -97,6 +100,41 @@ if [ ! -f $trimmed_fastq ]; then
 fi
 
 truncate -s0 $out_fastq
+
+#decontamination by mapping to decoy microbial genome
+if [ $decon = "TRUE" ]; then
+
+	out_prefix=$(dirname $trimmed_fastq)/$(basename $trimmed_fastq .fq)_bwaMeth
+	if [ ! -f $out_prefix.bam ]; then
+		echo "Performing decon alignment."
+		python $bwaMeth_path/bwameth.py --reference $decon_reference $trimmed_fastq -t1 -p $out_prefix -m0.08 
+	fi
+
+	if [ ! -s $out_prefix.bam ];then
+		echo "bwameth failed (bam size 0). Exiting!"
+		rm $out_prefix.bam
+		rm $trimmed_fastq
+		echo "" > $working_dir/$new_name_error.done
+		exit 0
+	fi
+
+	count_reads_orig=`wc -l $trimmed_fastq`
+	count_reads_decon=`samtools view -c $out_prefix.bam`
+
+	if [ ! $((count_reads_orig / 4)) = $count_reads_decon ];then
+		echo "bwameth failed (number of reads in input.bam and decon. is different). Exiting!"
+		rm $out_prefix.bam
+		rm $trimmed_fastq
+		echo "" > $working_dir/$new_name_error.done
+		exit 0
+	fi
+
+	samtools view -f 4 $out_prefix.bam|awk -F'\t' '{print "@"$1"\n"$10"\n+\n"$11 }' > ${out_prefix}_decon.fq
+	mv ${out_prefix}_decon.fq $trimmed_fastq
+	samtools view $out_prefix.bam|cut -f3,4|sort|uniq -c|sort -k1,1nr > ${out_prefix}_decon_summary.txt
+fi
+
+
 
 #check which samples should be included for reference building
 
