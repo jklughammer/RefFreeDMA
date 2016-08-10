@@ -12,7 +12,7 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ####7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
 2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
-3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
+3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
 4\. Edit the test configuration file (`RefFreeDMA_test/meta/RefFreeDMA_test.cfg`): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.  
 5\. Install the required [R packages](#r-packages) if needed.  
 6\. Run RefFreeDMA.sh.  
@@ -25,6 +25,8 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 ./scripts/parse_stats.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
 (9.) If you encounter problems please check the `RefFreeDMA_test/log` directory. It contains log files for each step.
+
+*The tools included in the external software bundle have been compiled under SL6.
 
 Dependencies
 ------------
@@ -43,12 +45,16 @@ __*Tools*__
 **trim_galore:** http://www.bioinformatics.babraham.ac.uk/projects/trim_galore/  
 **Bowtie2:** http://bowtie-bio.sourceforge.net/bowtie2/index.shtml  
 **BSMAP:** https://code.google.com/p/bsmap/  
+**BWA >0.7*:** https://github.com/lh3/bwa  
+**bwa-meth*:** https://github.com/brentp/bwa-meth  
 __*Python libraries*__  
 **biopython:** http://biopython.org/DIST/biopython-1.63.zip  
 **bitarray:** https://pypi.python.org/packages/source/b/bitarray/bitarray-0.8.1.tar.gz  
 **guppy:** https://pypi.python.org/packages/source/g/guppy/guppy-0.1.10.tar.gz  
 **pysam:** https://code.google.com/p/pysam/downloads/detail?name=pysam-0.7.5.tar.gz  
+**toolshed*:** https://pypi.python.org/packages/source/t/toolshed/toolshed-0.4.0.tar.gz  
 
+*Optional: These tools and libraries are needed for the optional [decontamination step](#decontamination).  
 ###R packages
 ```R
 #CRAN
@@ -108,6 +114,8 @@ Input files are unmapped BAM files (one per sample). Input files have to be loca
 ###Analysing DNA methylation in non-CpG context
 RefFreeDMA has so far been used and tested extensively only for the analysis of differential DNA methylation in CpG context. However, setting the [nonCpG parameter](#set-variable-parameters) to TRUE will make RefFreeDMA run the same analysis on Cs in CHH and CHG context as for Cs in CpG context. Two more output folders (diffMeth_cphph and diffMeth_cphpg) will be produced. This feature has been tested and validated on simulated data.
 
+###Decontamination
+In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
 
 Running RefFreeDMA
 ------------------
@@ -124,7 +132,9 @@ Running RefFreeDMA
 |bowtie2_path|Needed for all against all alignment (cluster finding)|
 |bsmap_path|Needed for bisulfite conversion aware alignment|
 |samtools_path|needed for bam/sam conversions, indexing and flagstats|
-
+|bwa_path|needed for decontamination (mapping)|
+|bwameth_path|needed for decontamination (mapping)|
+|decon_reference|needed for decontamination (mapping reference)|
 ```bash
 tool_path=YOUR_TOOLS_PATH
 picard_path=$tool_path/picard-tools_1.118/
@@ -133,6 +143,9 @@ cutadapt_path=$tool_path/cutadapt_1.8.3/
 bowtie2_path=$tool_path/bowtie_2.2.4/bin/
 bsmap_path=$tool_path/bsmap_2.90/
 samtools_path=$tool_path/samtools_1.2/bin/
+bwa_path=$tool_path/bwa_0.7.8/bin/
+bwameth_path=$tool_path/bwa-meth-0.10/
+decon_reference=YOUR_DECON_PATH/decon_reference/bacterial_extracted_add
 ```
 
 ###Adjust default parameters if required
@@ -140,6 +153,7 @@ samtools_path=$tool_path/samtools_1.2/bin/
 
 |parameter|proposed value|description|
 ----------|-------|-----------|
+|decon|FALSE|If set to TRUE all reads will be aligned to a microbial decoy genome and only reads that do not align will be used for building the deduced genome/further analysis.|
 |restrictionSites|"CGG"|Restriction sites (common 5' motif in RRBS reads). If multiple, specify them separated by pipe e.g. "CGG\|CGA" for MspI\|Taq1
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
 |nProcesses|4|Maximum number of allowed parallel processes for mapping and methylation calling.|
@@ -154,6 +168,8 @@ samtools_path=$tool_path/samtools_1.2/bin/
 |nTopDiffMeth|500|Maximum number of top differentially methylated fragments to return as fasta sequences|
 
 ```bash
+decon=FALSE
+restrictionSites="CGG"
 wait_time=10
 nProcesses=1
 nameSeparator="#"
