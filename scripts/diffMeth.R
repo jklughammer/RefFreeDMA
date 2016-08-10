@@ -3,6 +3,8 @@
 #Author: Johanna Klughammer
 #Date: 26.07.2015
 
+#options
+options(error=quote({message(paste0("Error. Possibly due to missing replicates. Continuing to the end anyways."))})) #prevents RefFreeDMA from running on in case of error.
 
 #libraries
 suppressPackageStartupMessages(library(VennDiagram))
@@ -303,7 +305,7 @@ pcaSub$rotation=pca$rotation[order(sqrt((pca$rotation[,"PC1"])^2+(pca$rotation[,
 pdf(paste0(out_dir,"/",species,"_biplot_1-2_frag.pdf"),height=6,width=7)
 ggbiplot(pcaSub,c(1,2),labels=PC_annot$Sample_Name,group=unlist(PC_annot[,groups_col,with=FALSE]),varname.size=2.5)
 dev.off()
-#PC4 and PC4
+#PC3 and PC4
 pcaSub$rotation=pca$rotation[order(sqrt((pca$rotation[,"PC3"])^2+(pca$rotation[,"PC4"])^2),decreasing=TRUE),][1:40,]
 pdf(paste0(out_dir,"/",species,"_biplot_3-4_frag.pdf"),height=6,width=7)
 ggbiplot(pcaSub,c(3,4),labels=PC_annot$Sample_Name,group=unlist(PC_annot[,groups_col,with=FALSE]),varname.size=2.5)
@@ -315,7 +317,7 @@ pcaSub$rotation=pca$rotation[order(sqrt((pca$rotation[,"PC1"])^2+(pca$rotation[,
 pdf(paste0(out_dir,"/",species,"_biplot_1-2_frag_noLab.pdf"),height=6,width=7)
 ggbiplot(pcaSub,c(1,2),group=unlist(PC_annot[,groups_col,with=FALSE]),size=3.5)
 dev.off()
-#PC4 and PC4
+#PC3 and PC4
 pcaSub$rotation=pca$rotation[order(sqrt((pca$rotation[,"PC3"])^2+(pca$rotation[,"PC4"])^2),decreasing=TRUE),][1:40,]
 pdf(paste0(out_dir,"/",species,"_biplot_3-4_frag_noLab.pdf"),height=6,width=7)
 ggbiplot(pcaSub,c(3,4),group=unlist(PC_annot[,groups_col,with=FALSE]),size=3.5)
