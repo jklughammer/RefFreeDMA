@@ -10,6 +10,8 @@ then
 	echo "Please pass the configuration file as parameter to RefFreeDMA.sh!"
 	exit 1
 fi
+#turn decontamination off by default (overwrite through configuration file)
+decon=FALSE
 source $1
 #-----------------------LOAD_CONFIGURATION_END---------------
 
@@ -22,7 +24,7 @@ mkdir -p $logdir
 
 #-----------------------TOOLS_START----------------------------
 biseq_path=$scripts/
-export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$PATH
+export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$bwa_path:$PATH
 export PYTHONPATH=$tool_path/python2.7:$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
 
 #check if python libraries are there
@@ -32,14 +34,21 @@ python -c 'import Bio' 2>/dev/null && echo "python Bio ... OK" ||{ echo "python 
 python -c 'import pysam' 2>/dev/null && echo "python pysam ... OK" ||{ echo "python pysam ...  FAIL";fail=1; }
 python -c 'import bitarray' 2>/dev/null && echo "python bitarray ... OK" ||{ echo "python bitarray ...  FAIL";fail=1; }
 python -c 'import guppy' 2>/dev/null && echo "python guppy ... OK" ||{ echo "python guppy ...  FAIL";fail=1; }
+if [ $decon = "TRUE" ];then
+python -c 'import toolshed' 2>/dev/null && echo "python toolshed ... OK" ||{ echo "python toolshed ...  FAIL";fail=1; }
+fi
 #check if tools are there
 printf "\nChecking for required tools...\n"
 which samtools &>/dev/null && echo "samtools ... OK" ||{ echo "samtools ...  FAIL";fail=1; }
 which trim_galore &>/dev/null && echo "trim_galore ... OK" ||{ echo "trim_galore ...  FAIL";fail=1; }
 which cutadapt &>/dev/null && echo "cutadapt ... OK" ||{ echo "cutadapt ...  FAIL";fail=1; }
 which bowtie2 &>/dev/null && echo "bowtie2 ... OK" ||{ echo "bowtie2 ...  FAIL";fail=1; }
-which samtools &>/dev/null && echo "bsmap ... OK" ||{ echo "bsmap ...  FAIL";fail=1; }
+which bsmap &>/dev/null && echo "bsmap ... OK" ||{ echo "bsmap ...  FAIL";fail=1; }
 [ -e $picard_path/SamToFastq.jar ]  && echo "samToFastq.jar ... OK" ||{ echo "samToFastq.jar ...  FAIL";fail=1; } 
+if [ $decon = "TRUE" ];then
+which bwa &>/dev/null && echo "bwa ... OK" ||{ echo "bwa ...  FAIL";fail=1; }
+python $bwameth_path/bwameth.py -h &>/dev/null && echo "bwameth ... OK" ||{ echo "bwameth ...  FAIL";fail=1; }
+fi
 
 
 if [ $fail -eq 1 ];then
@@ -104,7 +113,28 @@ step="\n-------Read preparation-------\n"
 printf "$step"
 
 selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Name"){n=i}}} NR>1{if($s==1) {printf "|"$n"|"}}' $sample_annotation`
-printf "Samples selected for reference generation:\n$selected\n"
+number_selected=`echo $selected|grep -o "||"|wc -l`;((number_selected++))
+
+printf "Number_selected samples selected for reference generation:\n$selected\n"
+
+
+
+if [ $decon = "TRUE" ];then
+	echo "Running in decontamination mode. This will take a lot of memory and most likely fail if run locally."
+	mem=100000
+	queue="mediumq"
+	time="1-00:00:00"
+	if [ ! -s $decon_reference.bwameth.c2t.bwt ]; then
+	echo "Cound not find decon_reference. Exiting!"
+	exit 1
+	fi
+else
+	mem=6000
+	queue="shortq"
+	time="08:00:00"
+	decon_reference="NA"
+	bwameth_path="NA"
+fi
 
 count=0
 submitted=0
@@ -114,13 +144,16 @@ for file in `ls $bam_dir/*.bam`; do
 	sample=${sample/"$nameSeparator"/"__"}
 	echo $sample
 	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
+		#create tempdir, sothat processes don't clash
+		tempdir=$working_dir/TEMP/$sample
+		mkdir -p $tempdir
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path "$selected"
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --workdir $tempdir --ntasks=1 --cpus-per-task=1 --mem-per-cpu=$mem --partition=$queue --time=$time -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path "$selected" $decon $bwameth_path $decon_reference $tempdir
 			sleep 0.01m
 			((submitted++))
 		else
-			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' '$restrictionSites' '$samtools_path' '$selected' &> $logdir/prepareReads_${sample}.log" "$step"
+			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' '$restrictionSites' '$samtools_path' '$selected' $decon $bwameth_path $decon_reference $tempdir &> $logdir/prepareReads_${sample}.log" "$step"
 		fi
 	else
 		echo "${sample}_uniq.ref exists. Not submitted!"
@@ -131,8 +164,8 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 shopt -s extglob
-if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $maxSamples ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
-	echo "Didn't find the expected number of uniq.ref files ($maxSamples) or trimmed.fq files ($count). Exiting!"
+if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $number_selected ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
+	echo "Didn't find the expected number of uniq.ref files ($number_selected) or trimmed.fq files ($count). Exiting!"
 	exit 1
 fi
 shopt -u extglob
@@ -266,7 +299,7 @@ count=0
 if [ ! -f $cons_dir/toSelf_*_final ]; then
 	rm $working_dir/*.done 2>/dev/null
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=15000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
+		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=30000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
 		count=1
 	else
 		get_proc_stats "$scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit &> $logdir/makeConsensus_${sample}.log" "$step"
