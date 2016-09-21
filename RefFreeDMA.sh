@@ -115,7 +115,7 @@ printf "$step"
 selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Name"){n=i}}} NR>1{if($s==1) {printf "|"$n"|"}}' $sample_annotation`
 number_selected=`echo $selected|grep -o "||"|wc -l`;((number_selected++))
 
-printf "Number_selected samples selected for reference generation:\n$selected\n"
+printf "$number_selected samples selected for reference generation:\n$selected\n"
 
 
 
@@ -478,7 +478,7 @@ printf "$step"
 motif="cpg"
 if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=20000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=30000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
 		((submitted++))
 	else
 		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
