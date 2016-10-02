@@ -19,6 +19,7 @@ decon=${11}
 bwaMeth_path=${12}
 decon_reference=${13}
 tempdir=${14}
+unconv_tag=${15}
 
 #-----------------------PATHS_END----------------------------
 
@@ -147,17 +148,26 @@ fi
  echo $sample_name
  echo "$selected"
 
-# if [ `echo $selected|grep -c "|$sample_name|"` == 1 ];then
+
 if [[ "$selected" =~ .*"|$sample_name|".* ]];then
 	echo "$sample_name is selected for reference generation!"
 	mkdir -p $working_dir/reduced
+	out_uniq=$working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref	
 
 	#make unique based on unconverted sequences and only include reads that start with TGG in the converted form
 	convMotifs=`echo $resMotifs| awk '{gsub(/C/,"T");gsub("[|]","|^");print "^"$1}'`
 	echo $convMotifs
-	paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref || exit 1
-	if [ ! -s $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref ];then
-		rm $working_dir/reduced/$(basename $out_fastq .fastq)_uniq.ref		
+	paste <(awk 'NR%4==1' $trimmed_fastq) <(awk 'NR%4==2' $trimmed_fastq) <(awk 'NR%4==2 {gsub(/C/,"T",$1);print $1}' $trimmed_fastq)|awk -v m=$convMotifs '$3 ~ m && $2 !~ /N/'|sort -k 2,2 | uniq -f 1 > $out_uniq || exit 1
+	if [ ! -s $out_uniq ];then
+		rm $out_uniq
+		echo "${sample_name}_uniq.ref had filesize 0. Exiting!"		
+		exit 1		
+	fi
+	
+	if [[ "$sample_name" =~ .*"$unconv_tag".* ]];then
+		echo "$sample_name identified as unconverted."
+		mv $out_uniq ${out_uniq/_uniq.ref/_uniq.ref.unconv}
+		
 	fi
 
 else

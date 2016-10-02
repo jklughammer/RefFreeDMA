@@ -13,7 +13,7 @@ tolerance = int(sys.argv[2]) #can be different from max_read_length but sofar se
 max_read_length = int(sys.argv[3])
 working_dir=str(sys.argv[4])
 cLimit=float(sys.argv[5])
-
+unconv_tag=str(sys.argv[6])
 
 file_name = infile_name.split(".")[0]
 infile = open(infile_name, 'r')
@@ -31,6 +31,8 @@ count = 0
 start = 1
 include = 1
 last_include = 0
+
+unconv_factor=4 #factor to give more weight to unconverted reads when deciding between C and T
 
 #reads need to be sorted by converted sequence and from smalles to largest
 
@@ -68,19 +70,25 @@ for line in infile:
 	tCount = dict()
 	tChange = dict()
 	cChange = dict()
-	for read in orig:
+	for read,read_id in zip(orig,name):
+		if unconv_tag in read_id:
+			toAdd = unconv_factor
+			#print(read_id)
+		else:
+			toAdd = 1
+
 		for i in range(0, len(read)):
 			if read[i] == "C":
 				if i in cCount.keys():
-					cCount[i] = cCount[i] + 1
+					cCount[i] = cCount[i] + toAdd
 				else:
-					cCount[i] = 1
+					cCount[i] = toAdd
 					tCount[i] = 0
 			if read[i] == "T":
 				if i in tCount.keys():
-					tCount[i] = tCount[i] + 1
+					tCount[i] = tCount[i] + toAdd
 				else:
-					tCount[i] = 1
+					tCount[i] = toAdd
 
 	for key in cCount.keys():
 		quot=float(cCount[key])/(float(cCount[key])+float(tCount[key]))

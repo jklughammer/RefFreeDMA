@@ -116,7 +116,7 @@ selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Nam
 number_selected=`echo $selected|grep -o "||"|wc -l`;((number_selected++))
 
 printf "$number_selected samples selected for reference generation:\n$selected\n"
-
+printf "Unconverted tag: $unconv_tag\n"
 
 
 if [ $decon = "TRUE" ];then
@@ -143,20 +143,20 @@ for file in `ls $bam_dir/*.bam`; do
 	sample=$(basename $file .bam)
 	sample=${sample/"$nameSeparator"/"__"}
 	echo $sample
-	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref ]; then
+	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref* ]; then
 		#create tempdir, sothat processes don't clash
 		tempdir=$working_dir/TEMP/$sample
 		mkdir -p $tempdir
 		echo "submitted"
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --workdir $tempdir --ntasks=1 --cpus-per-task=1 --mem-per-cpu=$mem --partition=$queue --time=$time -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path "$selected" $decon $bwameth_path $decon_reference $tempdir
+			sbatch --export=ALL --get-user-env --job-name=prepareReads_$sample --workdir $tempdir --ntasks=1 --cpus-per-task=1 --mem-per-cpu=$mem --partition=$queue --time=$time -e $logdir/prepareReads_${sample}_%j.err -o $logdir/prepareReads_${sample}_%j.log $scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path "$nameSeparator" $restrictionSites $samtools_path "$selected" $decon $bwameth_path $decon_reference $tempdir $unconv_tag
 			sleep 0.01m
 			((submitted++))
 		else
-			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' '$restrictionSites' '$samtools_path' '$selected' $decon $bwameth_path $decon_reference $tempdir &> $logdir/prepareReads_${sample}.log" "$step"
+			get_proc_stats "$scripts/prepareReads.sh $working_dir $file $maxReadLen $picard_path $trim_galore_path $cutadapt_path '$nameSeparator' '$restrictionSites' '$samtools_path' '$selected' $decon $bwameth_path $decon_reference $tempdir $unconv_tag &> $logdir/prepareReads_${sample}.log" "$step"
 		fi
 	else
-		echo "${sample}_uniq.ref exists. Not submitted!"
+		echo "${sample}_uniq.ref* exists. Not submitted!"
 	fi
 	((count++))
 done
@@ -164,7 +164,7 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 shopt -s extglob
-if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref|wc -l` = $number_selected ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
+if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref*|wc -l` = $number_selected ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
 	echo "Didn't find the expected number of uniq.ref files ($number_selected) or trimmed.fq files ($count). Exiting!"
 	exit 1
 fi
@@ -180,10 +180,10 @@ count=0
 printf "$step"
 if [ ! -f $working_dir/reduced/merged_dupl.ref ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=noiseReduction --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/noiseReduction_%j.err -o $logdir/noiseReduction_%j.log $scripts/noiseReduction.sh $working_dir $filtLim $maxSamples
+		sbatch --export=ALL --get-user-env --job-name=noiseReduction --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/noiseReduction_%j.err -o $logdir/noiseReduction_%j.log $scripts/noiseReduction.sh $working_dir $filtLim $maxSamples $unconv_tag
 		((count++))
 	else
-		get_proc_stats "$scripts/noiseReduction.sh $working_dir $filtLim $maxSamples" "$step"
+		get_proc_stats "$scripts/noiseReduction.sh $working_dir $filtLim $maxSamples $unconv_tag" "$step"
 	fi
 else
 	echo "merged_dupl.ref exists. Skipping!"
@@ -206,10 +206,10 @@ count=0
 if [ `ls $working_dir/reduced/*collapse* 2>/dev/null|wc -l` -lt 1 ]; then
 	
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=makePreConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/makePreConsensus_%j.err -o $logdir/makePreConsensus_%j.log $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit
+		sbatch --export=ALL --get-user-env --job-name=makePreConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/makePreConsensus_%j.err -o $logdir/makePreConsensus_%j.log $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit $unconv_tag
 		((count++))
 	else
-		get_proc_stats "python $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit" "$step"
+		get_proc_stats "python $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit $unconv_tag" "$step"
 	fi
 else
 	echo "At least one collapse file exists. Skipping!"

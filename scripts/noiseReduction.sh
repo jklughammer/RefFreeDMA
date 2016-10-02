@@ -7,6 +7,7 @@
 working_dir=$1
 filtLim=$2
 maxSamples=$3
+unconv_tag=$4
 
 
 cd $working_dir/reduced/
@@ -41,7 +42,23 @@ if [ -f merged.ref ]; then
 	rm merged.ref
 	filesCount=0
 fi
-sort -k 2,2 merged_dupl.ref | uniq -f 1| sort -k 3,3 > merged_uniq.ref
+
+
+
+if [ -f *_uniq.ref.unconv ];then
+
+	sort -k 2,2 merged_dupl.ref | uniq -f 1 > merged_uniq.temp
+	cat <(cat *_uniq.ref.unconv| uniq -f 1) <(cat merged_uniq.temp)| sort -k 3,3 | uniq -f 2 -D |grep $unconv_tag >> merged_uniq.temp
+
+	sort -k 3,3 merged_uniq.temp > merged_uniq.ref
+
+else
+
+	sort -k 2,2 merged_dupl.ref | uniq -f 1| sort -k 3,3 > merged_uniq.ref
+
+fi
+
+
 
 cd -
 
