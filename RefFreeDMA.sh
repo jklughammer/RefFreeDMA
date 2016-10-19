@@ -13,6 +13,11 @@ fi
 #turn decontamination off by default (overwrite through configuration file)
 decon=FALSE
 source $1
+
+if [ ! -n "$unconv_tag" ];then 
+	unconv_tag="no unconv_tag"
+fi
+
 #-----------------------LOAD_CONFIGURATION_END---------------
 
 #-----------------------PATHS_START----------------------------
@@ -24,7 +29,7 @@ mkdir -p $logdir
 
 #-----------------------TOOLS_START----------------------------
 biseq_path=$scripts/
-export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$bwa_path:$PATH
+export PATH=$cutadapt_path/bin:$picard_path:$trim_galore_path:$bowtie2_path:$bsmap_path:$samtools_path:$bedtools_path:$bwa_path:$PATH
 export PYTHONPATH=$tool_path/python2.7:$cutadapt_path/lib/python2.7/site-packages:~/.local/lib/python2.7/site-packages/:$PYTHONPATH
 
 #check if python libraries are there
@@ -40,6 +45,7 @@ fi
 #check if tools are there
 printf "\nChecking for required tools...\n"
 which samtools &>/dev/null && echo "samtools ... OK" ||{ echo "samtools ...  FAIL";fail=1; }
+which bedtools &>/dev/null && echo "bedtools ... OK" ||{ echo "bedtools ...  FAIL";fail=1; }
 which trim_galore &>/dev/null && echo "trim_galore ... OK" ||{ echo "trim_galore ...  FAIL";fail=1; }
 which cutadapt &>/dev/null && echo "cutadapt ... OK" ||{ echo "cutadapt ...  FAIL";fail=1; }
 which bowtie2 &>/dev/null && echo "bowtie2 ... OK" ||{ echo "bowtie2 ...  FAIL";fail=1; }
@@ -113,7 +119,7 @@ step="\n-------Read preparation-------\n"
 printf "$step"
 
 selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Name"){n=i}}} NR>1{if($s==1) {printf "|"$n"|"}}' $sample_annotation`
-number_selected=`echo $selected|grep -o "||"|wc -l`;((number_selected++))
+sel_count=`echo $selected|grep -o "|"|wc -l`;number_selected=$((sel_count / 2))
 
 printf "$number_selected samples selected for reference generation:\n$selected\n"
 printf "Unconverted tag: $unconv_tag\n"
@@ -122,8 +128,8 @@ printf "Unconverted tag: $unconv_tag\n"
 if [ $decon = "TRUE" ];then
 	echo "Running in decontamination mode. This will take a lot of memory and most likely fail if run locally."
 	mem=100000
-	queue="mediumq"
-	time="1-00:00:00"
+	queue="longq"
+	time="2-00:00:00"
 	if [ ! -s $decon_reference.bwameth.c2t.bwt ]; then
 	echo "Cound not find decon_reference. Exiting!"
 	exit 1
@@ -271,7 +277,7 @@ count=0
 printf "$step"
 if [ ! -f $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=shortq --time=08:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
+		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=mediumq --time=1-00:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
 		((count++))
 	else
 		get_proc_stats "$scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir" "$step"
@@ -299,7 +305,7 @@ count=0
 if [ ! -f $cons_dir/toSelf_*_final ]; then
 	rm $working_dir/*.done 2>/dev/null
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=30000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
+		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=90000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
 		count=1
 	else
 		get_proc_stats "$scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit &> $logdir/makeConsensus_${sample}.log" "$step"
@@ -370,7 +376,7 @@ count=0
 printf "$step"
 if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=concatenateRef --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/concatenateRef_%j.err -o $logdir/concatenateRef_%j.log $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir
+		sbatch --export=ALL --get-user-env --job-name=concatenateRef --ntasks=1 --cpus-per-task=1 --mem-per-cpu=10000 --partition=shortq --time=08:00:00 -e $logdir/concatenateRef_%j.err -o $logdir/concatenateRef_%j.log $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir
 		((count++))
 	else
 		get_proc_stats "python $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir" "$step"
@@ -428,13 +434,13 @@ for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
 	sample=$(basename $unmapped_fastq .fq)
 	sample=${sample//_trimmed/}
 	echo $sample
-	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
+	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.beds ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=mediumq --time=2-00:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts
+			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=8000 --partition=mediumq --time=2-00:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts $bedtools_path
 			((submitted++))
 		else
-			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts &> $logdir/meth_calling_${sample}.log" "$step"
+			get_proc_stats "$scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts $bedtools_path &> $logdir/meth_calling_${sample}.log" "$step"
 		fi
 	else
 		echo "$sample already processed. Not submitted!"

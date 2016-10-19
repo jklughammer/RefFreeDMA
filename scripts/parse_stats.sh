@@ -104,10 +104,14 @@ total_reads_untrimmed=${total_reads_untrimmed/"total_reads\t"/}
 motifs=${motifs/"motifs\t"/}
 counts=${counts/"counts\t"/}
 
+#fragment coverage
+fragment_cov=`cat $working_dir/$analysis_dir/$sample/*.covstats`
+
+
 if [ ! -f $summary_dir/summary.txt ]; then
-	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs" >$summary_dir/summary.txt
+	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc" >$summary_dir/summary.txt
 fi
 
-echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts" >>$summary_dir/summary.txt
+echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$fragment_cov" >>$summary_dir/summary.txt
 
 done

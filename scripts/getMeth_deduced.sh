@@ -21,6 +21,7 @@ nonCpG=${10}
 samtools_path=$6
 bsmap_path=$7
 biseq_path=$8
+bedtools_path=${12}
 scripts=${11}
 # -----------------------------------------
 # bsmap
@@ -153,5 +154,23 @@ echo "" > $analysis_dir/${sample}.done
 
 #---check read ristribution---
 Rscript $scripts/checkReadDistribution.R $align_dir/biseqMethcalling $sample
+
+#---check % fragment coverage
+in_bed=$(dirname $ref_genome_fasta).bed
+out=${bsmap_aligned_bam/".bam"/".cov"}
+#$bedtools_path/bedtools coverage -a $in_bed -b $bsmap_aligned_bam > $out
+bedtools coverage -a $in_bed -b $bsmap_aligned_bam -sorted > $out
+
+
+no_cov=`cut -f11,11 $out|grep "0"|wc -l`
+all=`cut -f11,11 $out|wc -l`
+ratio=`printf "%.2f" $(echo "100*$no_cov/$all"|bc -l)`
+
+echo -e "$all\t$no_cov\t$ratio" > ${bsmap_aligned_bam/".bam"/".covstats"}
+
+
+
+
+
 
 
