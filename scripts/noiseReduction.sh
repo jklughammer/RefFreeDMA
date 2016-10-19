@@ -51,6 +51,7 @@ if [ -f *_uniq.ref.unconv ];then
 	cat <(cat *_uniq.ref.unconv| uniq -f 1) <(cat merged_uniq.temp)| sort -k 3,3 | uniq -f 2 -D |grep $unconv_tag >> merged_uniq.temp
 
 	sort -k 3,3 merged_uniq.temp > merged_uniq.ref
+	rm merged_uniq.temp
 
 else
 
