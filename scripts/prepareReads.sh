@@ -116,23 +116,26 @@ if [ $decon = "TRUE" ]; then
 		rm $out_prefix.bam
 		rm $trimmed_fastq
 		echo "" > $working_dir/$new_name_error.done
-		exit 0
+		exit 1
 	fi
 
-	count_reads_orig=`wc -l $trimmed_fastq`
-	count_reads_decon=`samtools view -c $out_prefix.bam`
+	count_reads_orig=`cat $trimmed_fastq|wc -l`
+	count_reads_decon=`$samtools_path/samtools view -c $out_prefix.bam`
+
+	echo "count_reads_orig: $count_reads_orig"
+	echo "count_reads_decon: $count_reads_decon"	
 
 	if [ ! $((count_reads_orig / 4)) = $count_reads_decon ];then
 		echo "bwameth failed (number of reads in input.bam and decon. is different). Exiting!"
 		rm $out_prefix.bam
 		rm $trimmed_fastq
 		echo "" > $working_dir/$new_name_error.done
-		exit 0
+		exit 1
 	fi
 
-	samtools view -f 4 $out_prefix.bam|awk -F'\t' '{print "@"$1"\n"$10"\n+\n"$11 }' > ${out_prefix}_decon.fq
+	$samtools_path/samtools view -f 4 $out_prefix.bam|awk -F'\t' '{print "@"$1"\n"$10"\n+\n"$11 }' > ${out_prefix}_decon.fq
 	mv ${out_prefix}_decon.fq $trimmed_fastq
-	samtools view $out_prefix.bam|cut -f3,4|sort|uniq -c|sort -k1,1nr > ${out_prefix}_decon_summary.txt
+	$samtools_path/samtools view $out_prefix.bam|cut -f3,4|sort|uniq -c|sort -k1,1nr > ${out_prefix}_decon_summary.txt
 fi
 
 
@@ -165,6 +168,7 @@ if [[ "$selected" =~ .*"|$sample_name|".* ]];then
 	fi
 	
 	if [[ "$sample_name" =~ .*"$unconv_tag".* ]];then
+		echo "unconv_tag: $unconv_tag"
 		echo "$sample_name identified as unconverted."
 		mv $out_uniq ${out_uniq/_uniq.ref/_uniq.ref.unconv}
 		
