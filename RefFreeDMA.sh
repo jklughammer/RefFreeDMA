@@ -404,15 +404,15 @@ fi
 #---------------------CrossMapping_START--------------------------
 if [ ! $cross_genome_fa = "-" ]; then
 	ref_genome_fasta=$cross_genome_fa
-	genome_id=$(basename $ref_genome_fasta)
-	step="\n-------Cross mapping to $genome_id-------\n"
+	cross_genome_id=$(basename $ref_genome_fasta .fa)
+	step="\n-------Cross mapping to $cross_genome_id-------\n"
 	printf "$step"
-	if [ ! -s $working_dir/crossMapping/$genome_id/*.flagstat ]; then
+	if [ ! -s $working_dir/crossMapping/$cross_genome_id/*.flagstat ]; then
 		unmapped_fastq=$working_dir/reduced/consensus/${sample}_final.fq
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=crossMapping_$cross_genome_id --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${cross_genome_id}_%j.err" -o "$logdir/crossMapping_${cross_genome_id}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
+			sbatch --export=ALL --get-user-env --job-name=crossMapping_$cross_genome_id --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${cross_genome_id}_%j.err" -o "$logdir/crossMapping_${cross_genome_id}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
 		else
-			get_proc_stats "$scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses &> $logdir/crossMapping_${cross_genome_id}.log" "$step"
+			get_proc_stats "$scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses &> $logdir/crossMapping_${cross_genome_id}.log" "$step"
 		fi
 	else
 		echo "Cross-mapping flagstat file already exists. Skipping!"
@@ -434,7 +434,7 @@ for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
 	sample=$(basename $unmapped_fastq .fq)
 	sample=${sample//_trimmed/}
 	echo $sample
-	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.beds ]; then
+	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=8000 --partition=mediumq --time=2-00:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts $bedtools_path
@@ -484,7 +484,7 @@ printf "$step"
 motif="cpg"
 if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=30000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
 		((submitted++))
 	else
 		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
