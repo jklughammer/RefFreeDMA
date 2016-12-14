@@ -149,7 +149,7 @@ for file in `ls $bam_dir/*.bam`; do
 	sample=$(basename $file .bam)
 	sample=${sample/"$nameSeparator"/"__"}
 	echo $sample
-	if [ ! -f $working_dir/reduced/*${sample}_uniq.ref* ]; then
+	if [ ! -s $working_dir/reduced/*${sample}_uniq.ref* ] ; then
 		#create tempdir, sothat processes don't clash
 		tempdir=$working_dir/TEMP/$sample
 		mkdir -p $tempdir
@@ -407,7 +407,7 @@ if [ ! $cross_genome_fa = "-" ]; then
 	cross_genome_id=$(basename $ref_genome_fasta .fa)
 	step="\n-------Cross mapping to $cross_genome_id-------\n"
 	printf "$step"
-	if [ ! -s $working_dir/crossMapping/$cross_genome_id/*.flagstat ]; then
+	if [ ! -s $working_dir/crossMapping/$cross_genome_id/$sample*.bam ]; then
 		unmapped_fastq=$working_dir/reduced/consensus/${sample}_final.fq
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=crossMapping_$cross_genome_id --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${cross_genome_id}_%j.err" -o "$logdir/crossMapping_${cross_genome_id}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
@@ -419,6 +419,31 @@ if [ ! $cross_genome_fa = "-" ]; then
 	fi
 fi
 #------------------CrossMapping_END-----------------------
+
+#---------------------Sample CrossMapping_START--------------------------
+if [ ! $cross_genome_fa = "-" ]; then
+	ref_genome_fasta=$cross_genome_fa
+	cross_genome_id=$(basename $ref_genome_fasta .fa)
+	step="\n-------Sample Cross mapping to $cross_genome_id-------\n"
+	printf "$step"
+	
+	for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
+	run_sample=$(basename $unmapped_fastq .fq)
+	run_sample=${run_sample//_trimmed/}
+	echo $run_sample
+	if [ ! -s $working_dir/$cross_genome_id/$cross_genome_id/$run_sample*.bam ]; then
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=crossMapping_$run_sample --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${run_sample}_%j.err" -o "$logdir/crossMapping_${run_sample}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $run_sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
+		else
+			get_proc_stats "$scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $run_sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses &> $logdir/crossMapping_${run_sample}.log" "$step"
+		fi
+	else
+		echo "Cross-mapping flagstat file already exists. Skipping!"
+	fi
+	done
+fi
+#------------------Sample CrossMapping_END-----------------------
+
 
 #---------------------READ_Mapping_and_Methcalling_START--------------------------
 step="\n-------Mapping to the deduced genome and methylation calling-------\n"
