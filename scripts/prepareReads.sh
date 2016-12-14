@@ -128,6 +128,7 @@ if [ $decon = "TRUE" ]; then
 	if [ ! $((count_reads_orig / 4)) = $count_reads_decon ];then
 		echo "bwameth failed (number of reads in input.bam and decon. is different). Exiting!"
 		rm $out_prefix.bam
+		rm $out_fastq		
 		rm $trimmed_fastq
 		echo "" > $working_dir/$new_name_error.done
 		exit 1
