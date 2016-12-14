@@ -68,6 +68,8 @@ function run_bsmap {
 	echo $command
 	`$command`
 	$samtools_path/samtools flagstat $output_bam > $output_bam.flagstat
+	$samtools_path/samtools sort -f $output_bam $output_bam
+	$samtools_path/samtools index $output_bam
 }
 
 
