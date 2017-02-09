@@ -85,12 +85,12 @@ out_fastq=$working_dir/fastq/$new_name.fastq
 trimmed_fastq=$working_dir/fastq/$(basename $out_fastq .fastq)_trimmed.fq
 
 #bam to fastq conversion
-if [ ! -f $out_fastq ]; then
+if [ ! -s $out_fastq ]; then
 	picard_sam_to_fastq $in_file $out_fastq
 fi
 
 #read trimming
-if [ ! -f $trimmed_fastq ]; then
+if [ ! -s $trimmed_fastq ]; then
 	trim_galore $out_fastq $working_dir/fastq/
 	
 	# additionnally top reads at desired maxReadLen

@@ -431,14 +431,14 @@ if [ ! $cross_genome_fa = "-" ]; then
 	run_sample=$(basename $unmapped_fastq .fq)
 	run_sample=${run_sample//_trimmed/}
 	echo $run_sample
-	if [ ! -s $working_dir/$cross_genome_id/$cross_genome_id/$run_sample*.bam ]; then
+	if [ ! -s $working_dir/crossMapping/$cross_genome_id/$run_sample*.bam ]; then
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=crossMapping_$run_sample --ntasks=1 --cpus-per-task=4 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/crossMapping_${run_sample}_%j.err" -o "$logdir/crossMapping_${run_sample}_%j.log" $scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $run_sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses
 		else
 			get_proc_stats "$scripts/crossMapping.sh $working_dir $unmapped_fastq $ref_genome_fasta $cross_genome_id $run_sample $crossMap_mismatchRate $samtools_path $bsmap_path $nProcesses &> $logdir/crossMapping_${run_sample}.log" "$step"
 		fi
 	else
-		echo "Cross-mapping flagstat file already exists. Skipping!"
+		echo "Cross-mapping bam file already exists. Skipping!"
 	fi
 	done
 fi
@@ -509,10 +509,10 @@ printf "$step"
 motif="cpg"
 if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 	if [ $parallel = "TRUE" ]; then
-		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 		((submitted++))
 	else
-		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
+		get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag &> $logdir/diffMeth_$motif.log" "$step"
 	fi
 else
 	echo "$motif diff_meth.tsv already exists. Skipping..."
@@ -526,10 +526,10 @@ if [ $nonCpG = "TRUE" ]; then
 	motif="cphpg"
 	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=20000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif	
+			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 			((submitted++))		
 		else
-			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
+			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag &> $logdir/diffMeth_$motif.log" "$step"
 		fi
 	else
 		echo "$motif diff_meth.tsv already exists. Skipping..."
@@ -541,10 +541,10 @@ if [ $nonCpG = "TRUE" ]; then
 	motif="cphph"
 	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
 		if [ $parallel = "TRUE" ]; then
-			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=20000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif
+			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 			((submitted++))	
 		else
-			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif &> $logdir/diffMeth_$motif.log" "$step"
+			get_proc_stats "$scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag &> $logdir/diffMeth_$motif.log" "$step"
 		fi
 	else
 		echo "$motif diff_meth.tsv already exists. Skipping..."
