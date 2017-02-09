@@ -31,7 +31,7 @@ groups_col=args[7]
 nTopDiffMeth=args[8]
 scripts=args[9]
 motif=args[10]
-
+uc_tag=args[11]
 
 source(paste0(scripts,"/ggbiplot_custom.R"))
 
@@ -56,6 +56,7 @@ stats=data.frame()
 # collect methylation tables
 collectMethData=function(dir,motif){
   RRBSfiles=system(paste0("ls ",dir, "/*/*/*",motif,"Methylation*.bed"), intern=TRUE)
+  RRBSfiles=RRBSfiles[!grepl(uc_tag,RRBSfiles)]
   Meth_bed=NULL
   for (file in RRBSfiles){
     if (grepl("__",file)==TRUE){
@@ -218,7 +219,7 @@ combineTestPvalsMeth<-function (pvalues, testWeights = NULL, correlated = FALSE,
 #read sample annptation
 sample_annot=fread(sampleAnnotation)
 sample_annot[sample_annot==""]=NA
-
+sample_annot=sample_annot[!grepl(uc_tag,Sample_Name),]
 
 #combine meth bed files by caching (Nathan)
 simpleCache(recreate=TRUE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
