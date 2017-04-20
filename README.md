@@ -9,7 +9,7 @@ Quick start
 -----------
 __Note:__ The following steps will run RefFreeDMA in linear mode on a small sample data set consisting of severely downsampled RRBS data for human granulocytes (G), lymphocytes (L), and monocytes (M) in four replicates. The exemplary working directory (RefFreeDMA_test) includes the raw data, the sample annotation file, and the configuration file. RefFreeDMA should complete within 10 minutes on a desktop computer and produce plots that show clear clustering of the samples by cell type as well as tables reporting differential methylation between granulocytes and lymphocytes. After completion, all output can be found within the [working directory](#reffreedma-results) which in this example is RefFreeDMA_test. RefFreeDMA skips steps if the respective output is already present. Therefore, in order to rerun, RefFreeDMA_test needs to be reset to its original state by running `reset_test_dir.sh PATH_TO_TESTDIR/RefFreeDMA_test`. 
 
-####7 steps to test RefFreeDMA:
+#### 7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
 2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
 3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
@@ -30,14 +30,14 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 
 Dependencies
 ------------
-###System requirements
+### System requirements
 **Linux 64bit**  
 **bash:** http://www.gnu.org/software/bash/  
 **java:** http://openjdk.java.net/install/  
 **Python 2.7:** https://www.python.org/downloads/  
 **R/Rscript 3.1.2:** https://cran.r-project.org/  
 
-###External software
+### External software
 __*Tools*__  
 **SAMtools:** http://www.htslib.org/download/  
 **Picard Tools:** http://broadinstitute.github.io/picard/  
@@ -55,7 +55,7 @@ __*Python libraries*__
 **toolshed*:** https://pypi.python.org/packages/source/t/toolshed/toolshed-0.4.0.tar.gz  
 
 *Optional: These tools and libraries are needed for the optional [decontamination step](#decontamination).  
-###R packages
+### R packages
 ```R
 #CRAN
 install.packages("VennDiagram")
@@ -88,14 +88,13 @@ library("limma")
 library("Biostrings")
 library("simpleCache")
 ```
-###Configuration file
+### Configuration file
 The configuration file is a list of key=value pairs that pass mandatory parameters to RefFreeDMA.sh. There are three categories of parameters: [tool paths](#set-tool-paths) that point RefFreeDMA.sh to the required external software if it is not already part of your PATH variable, [default parameters](#adjust-default-parameters-if-required) that might need to be adjusted and [variable parameters](#set-variable-parameters) that are specific to each analysis. An example configuration file comes with the [test data set](#quick-start).
 
-###Reference genomes for cross-mapping
+### Reference genomes for cross-mapping
 Reference genomes for cross-mapping should be provided as one fasta file containing the chromosomes as separate entries. These genome fasta files can for example be obtained from UCSC Genome Browser or Ensembl. You can run RefFreeDMA on the same working directory for multiple cross-mapping genomes. There will be a separate output folder for each genome. In the [test run](#quick-start) cross-mapping is disabled by default to avoid the genome dependency, but can easily be enabled by passing a genome (cross_genome_fa) as [variable parameter](#set-variable-parameters). 
 
-###Sample annotation sheet
-
+### Sample annotation sheet
 The sample annotation sheet has to contain at least three columns: Sample_Name, a column that specifies the **two** groups to be compared in the differential methylation analysis and a column that specifies which samples are to be used for the generation of the deduced reference (1 = use; 0 = don't use). Samples that should not be included in the differential methylation analysis have to be marked with NA in this column. A fourth column can be specified to indicate groups for plotting purposes. The only two predefined column names are Sample_Name and Select. All other column names can be chosen and passed as paramenters (compCol and groupsCol). The sample annotation sheet is passed as parameter sample_annotation in the [variable parameters](#set-variable-parameters).
 
 | Sample_Name  |comp_gran_lympho|Cell_Type|Select| XXX  | YYY  |
@@ -108,23 +107,23 @@ The sample annotation sheet has to contain at least three columns: Sample_Name, 
 |Sample6|lymphocyte|lymphocyte|1|   |   |
 
 
-###Input files/ working directory
+### Input files/ working directory
 Input files are unmapped BAM files (one per sample). Input files have to be located or linked (`ln -s`) in a folder called unmapped_bam inside the specified working directory (working_dir). Input file names consist of either the sample name as specified in the sample annotation sheet or prefix (e.g. flowcell information) followed by the sample name. In the latter case prefix and sample name must be separated by a unique character sequence, which is to be specified as nameSeparator in the [default parameters](#adjust-default-parameters-if-required).
 
-###Analysing DNA methylation in non-CpG context
+### Analysing DNA methylation in non-CpG context
 RefFreeDMA has so far been used and tested extensively only for the analysis of differential DNA methylation in CpG context. However, setting the [nonCpG parameter](#set-variable-parameters) to TRUE will make RefFreeDMA run the same analysis on Cs in CHH and CHG context as for Cs in CpG context. Two more output folders (diffMeth_cphph and diffMeth_cphpg) will be produced. This feature has been tested and validated on simulated data.
 
-###Decontamination
+### Decontamination
 In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
 
 Running RefFreeDMA
 ------------------
 
-###Set tool paths
+### Set tool paths
 **Note:** Tool paths are set in the configuration file.  
 
 |parameter|explanation|
------|-----------|
+|-----|-----------|
 |tool_path|Path to a directory containing all the need external software, e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
 |picard_path|Needed for sam to fastq conversion|
 |trim_galore_path|Needed for read trimming|
@@ -132,6 +131,7 @@ Running RefFreeDMA
 |bowtie2_path|Needed for all against all alignment (cluster finding)|
 |bsmap_path|Needed for bisulfite conversion aware alignment|
 |samtools_path|needed for bam/sam conversions, indexing and flagstats|
+|bedtools_path|needed for coverage calculation|
 |bwa_path|needed for decontamination (mapping)|
 |bwameth_path|needed for decontamination (mapping)|
 |decon_reference|needed for decontamination (mapping reference)|
@@ -143,16 +143,18 @@ cutadapt_path=$tool_path/cutadapt_1.8.3/
 bowtie2_path=$tool_path/bowtie_2.2.4/bin/
 bsmap_path=$tool_path/bsmap_2.90/
 samtools_path=$tool_path/samtools_1.2/bin/
+bedtools_path=$tool_path/bedtools_2.26.0/bin/
 bwa_path=$tool_path/bwa_0.7.8/bin/
 bwameth_path=$tool_path/bwa-meth-0.10/
 decon_reference=YOUR_DECON_PATH/decon_reference/bacterial_extracted_add
 ```
 
-###Adjust default parameters if required
+### Adjust default parameters if required
 **Note:** Default parameters are set in the configuration file.  
 
 |parameter|proposed value|description|
-----------|-------|-----------|
+|----------|-------|-----------|
+|unconv_tag|"_uc"|Unique tag in unmapped bam file names that allows RefFreeDMA to identify samples as unconverted. These samples will be gven priority during reference generation.|
 |decon|FALSE|If set to TRUE all reads will be aligned to a microbial decoy genome and only reads that do not align will be used for building the deduced genome/further analysis.|
 |restrictionSites|"CGG"|Restriction sites (common 5' motif in RRBS reads). If multiple, specify them separated by pipe e.g. "CGG\|CGA" for MspI\|Taq1
 |wait_time|10|Check every wait_time minutes weather process is finished (only relevant for parallel mode).|
@@ -183,19 +185,20 @@ crossMap_mismatchRate=0.2
 nTopDiffMeth=500
 ```
 
-###Set variable parameters
+### Set variable parameters
 **Note:** Variable parameters are set in the configuration file.  
 
 |parameter|example|description|
-----------|--------|-------|-----------|
-working_dir|/home/RefFreeDMA_test|Directory in which the analysis is to be performed.|
-species|Hum|Identifier that will be part of the differential methylation output files.|
-cross_genome_fa|/home/genomes/mm10.fa|Fasta file for a genome that should be used for cross-mapping. Set to "-" to disable.|
-sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample annotation file.|
-compCol|comp_gran_lympho|Column in the sample annotation file that specifies groups of samples for differential methylation analysis.|
-groupsCol|Cell_Type|Column in the sample annotation file that specifies groups of samples for plotting. Can be the same as compCol.|
-parallel|TRUE or FALSE|Should RefFreeDMA be run in parallel (TRUE) or linear (FALSE) mode|
-nonCpG|TRUE or FALSE|Should RefFreeDMA analyse DNA methylation also in CHH and CHG context|
+|----------|--------|----------|
+|working_dir|/home/RefFreeDMA_test|Directory in which the analysis is to be performed.|
+|species|Hum|Identifier that will be part of the differential methylation output files.|
+|cross_genome_fa|/home/genomes/mm10.fa|Fasta file for a genome that should be used for cross-mapping. Set to "-" to disable.|
+|sample_annotation|/home/RefFreeDMA_test/<br>meta/sampleAnnotation.tsv|Sample annotation file.|
+|compCol|comp_gran_lympho|Column in the sample annotation file that specifies groups of samples for differential methylation analysis.|
+|groupsCol|Cell_Type|Column in the sample annotation file that specifies groups of samples for plotting. Can be the same as compCol.|
+|parallel|TRUE or FALSE|Should RefFreeDMA be run in parallel (TRUE) or linear (FALSE) mode. Parallel mode requires correct cluster submission commands.|
+|nonCpG|TRUE or FALSE|Should RefFreeDMA analyse DNA methylation also in CHH and CHG context.|
+
 ```bash
 working_dir=PATH_TO_TESTDIR/RefFreeDMA_test
 species=Hum
@@ -207,20 +210,20 @@ parallel=FALSE
 nonCpG=FALSE
 ```
 
-###Adapt cluster submission 
+### Adapt cluster submission 
 If run in parallel mode, RefFreeDMA submits the different tasks to the compute cluster instead of running them locally. The submit commands are valid for SLURM. If you are working with a different resource management system you need to adjust the submit commands in RefFreeDMA.sh.
 The SLURM submit command is of the following structure:
 ```
 sbatch --export=ALL --get-user-env --job-name= --ntasks= --cpus-per-task= --mem-per-cpu= --partition= --time= -e -o
 ```
 
-###Execute RefFreeDMA
+### Execute RefFreeDMA
 ```
 ./RefFreeDMA.sh configFile.cfg
 
 ```
 
-###RefFreeDMA results
+### RefFreeDMA results
 \*\*directories\*\* contain the user-relevant information. The other directories contain intermediate files, that might be needed for reruns and development.
 ```
 working_dir
