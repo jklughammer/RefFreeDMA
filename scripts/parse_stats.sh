@@ -19,8 +19,8 @@ summary_dir=$working_dir
 rm $summary_dir/summary.txt
 
 #get number of fragments in the deduced genome
-frag_file=$working_dir/reduced/consensus/toSelf_filtered_${mapToSelf_filter}mm_final
-total_frags=`cat $frag_file| wc -l`
+frag_file=$working_dir/reduced/consensus/toSelf_filtered_${mapToSelf_filter}mm_final.fa
+total_frags=`grep -v ">" $frag_file| wc -l`
 
 IFS='|' read -a resMotif_array <<<"$restrictionSites"
 
@@ -30,10 +30,10 @@ all_sum=0
 for motif in "${resMotif_array[@]}";do 
 	motifComplete="${motif//C/[CT]}"
 	motifT="${motif//C/T}"
-num=`grep -P "\t$motifComplete" $frag_file|wc -l`
+num=`grep -P "^$motifComplete" $frag_file|wc -l`
 
-num_c=`grep -P "\t$motif" $frag_file|wc -l`
-num_t=`grep -P "\t$motifT" $frag_file|wc -l`
+num_c=`grep -P "^$motif" $frag_file|wc -l`
+num_t=`grep -P "^$motifT" $frag_file|wc -l`
 
 perc_c=`printf "%.2f" $(echo "100*$num_c/$total_frags"|bc -l)`
 perc_t=`printf "%.2f" $(echo "100*$num_t/$total_frags"|bc -l)`
@@ -107,11 +107,18 @@ counts=${counts/"counts\t"/}
 #fragment coverage
 fragment_cov=`cat $working_dir/$analysis_dir/$sample/*.covstats`
 
-
-if [ ! -f $summary_dir/summary.txt ]; then
-	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc" >$summary_dir/summary.txt
+#contamination stats
+if [ -f $working_dir/fastq/${sample}_trimmed_bwaMeth_decon_summary.txt ]; then
+decon_res=$(Rscript -e "library(data.table);library(splitstackshape);decon_stats=cSplit(fread('$working_dir/fastq/${sample}_trimmed_bwaMeth_decon_summary.txt'),'V1',' ');decon_stats[,V4:=gsub('gi.*ref','',V1_2),];decon_stats_col=decon_stats[-1,][,sum(V1_1),by=V4];max_cont=as.character(decon_stats_col[which.max(V1),'V1',with=FALSE]);max_cont_sp=as.character(decon_stats_col[which.max(V1),'V4',with=FALSE]);cont=as.numeric(decon_stats[-1,sum(V1_1)]);cont_rat=cont/(cont+as.numeric(decon_stats[1,'V1_1',with=FALSE]));cat(paste0(c(max_cont_sp,max_cont,cont,cont_rat),collapse='\t'))")
+else
+decon_res="NA\tNA\tNA\tNA"
 fi
 
-echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$fragment_cov" >>$summary_dir/summary.txt
+
+if [ ! -f $summary_dir/summary.txt ]; then
+	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat" >$summary_dir/summary.txt
+fi
+
+echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$fragment_cov\t$decon_res" >>$summary_dir/summary.txt
 
 done
