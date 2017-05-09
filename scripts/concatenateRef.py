@@ -6,7 +6,6 @@ import time
 import sys
 import os
 
-
 infile_name = str(sys.argv[1])
 file_name = infile_name.split("_norc")[0]
 
@@ -65,5 +64,7 @@ for i in range(0,int(math.ceil(len(out)/50))+1):
     outfile.writelines(out[i*50:i*50+50] + "\n")
     if i % 200000 == 0:
         print(i)
+
+
 
 open(os.path.join(working_dir,"concatenateRef.done"), 'a')

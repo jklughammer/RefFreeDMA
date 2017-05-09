@@ -389,6 +389,9 @@ if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
 	mkdir -p $cons_dir/${sample}_final_concat
 	if [ -f $cons_dir/${sample}_final_concat.fa ]; then
 		mv $cons_dir/${sample}_final_concat.fa $cons_dir/${sample}_final_concat/
+		#Initialize genome database (using SeqIO.index_db makes it possible to use a single fasta file instead of having all chroms in separate fasta files)
+		#python -c "from Bio import SeqIO;genome = SeqIO.index_db('$cons_dir/${sample}_final_concat/${sample}_final_concat.idx','$cons_dir/${sample}_final_concat/${sample}_final_concat.fa','fasta')"
+		
 	fi 
 else
 	echo "${sample}_final_concat.fa exists. Skipping!"
@@ -459,7 +462,7 @@ for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
 	sample=$(basename $unmapped_fastq .fq)
 	sample=${sample//_trimmed/}
 	echo $sample
-	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed ]; then
+	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed* ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=8000 --partition=mediumq --time=2-00:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts $bedtools_path
@@ -477,18 +480,18 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 
-if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed|wc -l` = $count ]; then
+if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed*|wc -l` = $count ]; then
 	echo "Didn't find the expected number of cpgMethylation.bed files ($count). Exiting!"
 	exit 1
 fi
 
 fail=0
 if [ $nonCpG = "TRUE" ]; then
-	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphpgMethylation*.bed|wc -l` = $count ]; then
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphpgMethylation*.bed*|wc -l` = $count ]; then
 		echo "Didn't find the expected number of cphpgMethylation.bed files ($count). Exiting!"
 		fail=1
 	fi
-	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphphMethylation*.bed|wc -l` = $count ]; then
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphphMethylation*.bed*|wc -l` = $count ]; then
 		echo "Didn't find the expected number of cphphMethylation.bed files ($count). Exiting!"
 		fail=1
 	fi
@@ -498,6 +501,38 @@ if [ $nonCpG = "TRUE" ]; then
 fi
 
 #---------------------READ_Mapping_and_Methcalling_END--------------------------
+
+#------------------------------CALCULATE_PDR------------------------------------
+
+genome_dir=$working_dir/reduced/consensus/ 
+
+step="\n-------PDR calculation-------\n"
+printf "$step"
+	
+for aligned_bam in `ls $working_dir/$genome_id/*/*.bam`; do
+	run_sample=$(basename $aligned_bam .bam)
+	sample=${run_sample//.all.aligned*/}	
+	echo $run_sample
+	PDR_bed=$working_dir/$genome_id/$sample/${run_sample}_PDR.bed
+	echo $PDR_bed
+	if [ ! -s $PDR_bed ]; then
+		if [ $parallel = "TRUE" ]; then
+			sbatch --export=ALL --get-user-env --job-name=PDR_$run_sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/PDR_${run_sample}_%j.err" -o "$logdir/PDR_${run_sample}_%j.log" $scripts/bisulfiteReadConcordanceAnalysis.py --infile=$aligned_bam  --outfile=$PDR_bed --skipHeaderLines=0 --genome=$genome_id --genomeDir=$genome_dir --samtools=$samtools_path
+		else
+			get_proc_stats "$scripts/bisulfiteReadConcordanceAnalysis.py --infile=$aligned_bam  --outfile=$PDR_bed --skipHeaderLines=0 --genome=$genome_id --genomeDir=$genome_dir --samtools=$samtools_path &> $logdir/PDR_${run_sample}.log" "$step"
+		fi
+	else
+		echo "PDR bed file already exists. Skipping!"
+	fi
+	while [ ! -s $genome_dir/$genome_id/$genome_id.idx ]; do
+		sleep 0.1m
+	done
+done
+
+
+
+#------------------------------CALCULATE_PDR_END--------------------------------
+
 
 #---------------------DFFERENTIAL_METH_ANALYSIS_START--------------------------
 count=0
