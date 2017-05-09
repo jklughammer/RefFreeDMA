@@ -389,8 +389,6 @@ if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
 	mkdir -p $cons_dir/${sample}_final_concat
 	if [ -f $cons_dir/${sample}_final_concat.fa ]; then
 		mv $cons_dir/${sample}_final_concat.fa $cons_dir/${sample}_final_concat/
-		#Initialize genome database (using SeqIO.index_db makes it possible to use a single fasta file instead of having all chroms in separate fasta files)
-		#python -c "from Bio import SeqIO;genome = SeqIO.index_db('$cons_dir/${sample}_final_concat/${sample}_final_concat.idx','$cons_dir/${sample}_final_concat/${sample}_final_concat.fa','fasta')"
 		
 	fi 
 else
