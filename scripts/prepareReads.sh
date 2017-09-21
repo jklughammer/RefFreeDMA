@@ -115,7 +115,7 @@ if [ $decon = "TRUE" ]; then
 		echo "bwameth failed (bam size 0). Exiting!"
 		rm $out_prefix.bam
 		rm $trimmed_fastq
-		echo "" > $working_dir/$new_name_error.done
+		echo "" > $working_dir/${new_name}_error.done
 		exit 1
 	fi
 
@@ -130,7 +130,7 @@ if [ $decon = "TRUE" ]; then
 		rm $out_prefix.bam
 		rm $out_fastq		
 		rm $trimmed_fastq
-		echo "" > $working_dir/$new_name_error.done
+		echo "" > $working_dir/${new_name}_error.done
 		exit 1
 	fi
 

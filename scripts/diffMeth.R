@@ -222,7 +222,7 @@ sample_annot[sample_annot==""]=NA
 sample_annot=sample_annot[!grepl(uc_tag,Sample_Name),]
 
 #combine meth bed files by caching (Nathan)
-simpleCache(recreate=TRUE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
+simpleCache(recreate=FALSE,paste0(motif,"_combinedMeth_",species),instruction="collectMethData(RRBSdir,motif)")
 Meth_bed=get(paste0(motif,"_combinedMeth_",species))
 #deduced geneome fragment .bed file
 refBed_DT=fread(paste0("reduced/consensus/",RRBSdir,".bed"))
