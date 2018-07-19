@@ -1,6 +1,6 @@
 #!/bin/bash
 #command to run this on directory containing may sub projects (RefFreeDMA run folders):
-#find . -name '*.cfg' -exec /data/groups/lab_bock/jklughammer/gitRepos/RefFreeDMA_public/scripts/cleanup.sh {} \;
+#find . -name '*.cfg' -newermt 2018-04-20 -exec /data/groups/lab_bock/jklughammer/gitRepos/RefFreeDMA_public/scripts/cleanup.sh {} \;
 
 
 if [ $# -eq 0 ]
