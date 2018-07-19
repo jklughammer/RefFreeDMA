@@ -183,6 +183,27 @@ fi
 
 echo "" > $working_dir/$new_name.done
 
+#check base composition
+all_bases=`$samtools_path/samtools view $in_file|cut -f 10|tr -d '\n'|wc -m`
+As=`$samtools_path/samtools view $in_file|cut -f 10|grep -o "A"|wc -l`
+Ts=`$samtools_path/samtools view $in_file|cut -f 10|grep -o "T"|wc -l`
+Cs=`$samtools_path/samtools view $in_file|cut -f 10|grep -o "C"|wc -l`
+Gs=`$samtools_path/samtools view $in_file|cut -f 10|grep -o "G"|wc -l`
+Ns=`$samtools_path/samtools view $in_file|cut -f 10|grep -o "N"|wc -l`
+
+perc_As=`printf "%.2f" $(echo "100*$As/$all_bases"|bc -l)`
+perc_Ts=`printf "%.2f" $(echo "100*$Ts/$all_bases"|bc -l)`
+perc_Cs=`printf "%.2f" $(echo "100*$Cs/$all_bases"|bc -l)`
+perc_Gs=`printf "%.2f" $(echo "100*$Gs/$all_bases"|bc -l)`
+perc_Ns=`printf "%.2f" $(echo "100*$Ns/$all_bases"|bc -l)`
+
+bases="all_bases\tAs\tTs\tCs\tGs\tNs\tperc_As\tperc_Ts\tperc_Cs\tperc_Gs\tperc_Ns"
+base_counts="$all_bases\t$As\t$Ts\t$Cs\t$Gs\t$Ns\t$perc_As\t$perc_Ts\t$perc_Cs\t$perc_Gs\t$perc_Ns"
+
+echo $bases> $working_dir/fastq/$new_name.bases
+echo $base_counts>> $working_dir/fastq/$new_name.bases
+
+
 #now check restriction digest efficiency (this is independent of the rest of the pipeline)
 
 total_reads=`$samtools_path/samtools view $in_file|wc -l`
@@ -196,10 +217,10 @@ all_sum=0
 for motif in "${resMotif_array[@]}";do 
 	motifComplete="${motif//C/[CT]}"
 	motifT="${motif//C/T}"
-num=`$samtools_path/samtools view $in_file|grep -P "\t$motifComplete"|wc -l`
+num=`$samtools_path/samtools view $in_file|cut -f 10|grep -P "^$motifComplete"|wc -l`
 
-num_c=`$samtools_path/samtools view $in_file|grep -P "\t$motif"|wc -l`
-num_t=`$samtools_path/samtools view $in_file|grep -P "\t$motifT"|wc -l`
+num_c=`$samtools_path/samtools view $in_file|cut -f 10|grep -P "^$motif"|wc -l`
+num_t=`$samtools_path/samtools view $in_file|cut -f 10|grep -P "^$motifT"|wc -l`
 
 perc_c=`printf "%.2f" $(echo "100*$num_c/$total_reads"|bc -l)`
 perc_t=`printf "%.2f" $(echo "100*$num_t/$total_reads"|bc -l)`
