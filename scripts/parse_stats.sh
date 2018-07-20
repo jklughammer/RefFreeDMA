@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#run this script on all species
+#for in_file in `ls $results_dir/*/meta/*.cfg`; do; ./parse_stats.sh $in_file; done
+
 if [ $# -eq 0 ]
 then
 	echo "Please pass the configuration file as parameter to parse_stats.sh!"
@@ -47,9 +50,13 @@ done
 all_sum_perc=`printf "%.2f" $(echo "100*($total_frags-$all_sum)/$total_frags"|bc -l)`
 
 #samples used for reference generation
-shopt -s extglob
-num_samples=`ls $working_dir/reduced/!(merged)_uniq.ref|wc -l`
-shopt -u extglob
+#shopt -s extglob
+#num_samples=`ls $working_dir/reduced/!(merged)_uniq.ref|wc -l`
+#shopt -u extglob
+
+selected=`awk 'NR==1{for(i=1;i<=NF;i++){if($i=="Select"){s=i};if($i=="Sample_Name"){n=i}}} NR>1{if($s==1) {printf "|"$n"|"}}' $sample_annotation`
+sel_count=`echo $selected|grep -o "|"|wc -l`;num_samples=$((sel_count / 2))
+
 
 all_num="$all_num\t$total_frags\t$all_sum_perc\t$num_samples\t$species"
 all_motifs="$all_motifs\ttotal\tothers\tsamples\tspecies"
@@ -107,6 +114,10 @@ counts=${counts/"counts\t"/}
 #fragment coverage
 fragment_cov=`cat $working_dir/$analysis_dir/$sample/*.covstats`
 
+#base composition
+bases=`cat $working_dir/fastq/$sample.bases|sed -n 1p`
+bases_counts=`cat $working_dir/fastq/$sample.bases|sed -n 2p`
+
 #contamination stats
 if [ -f $working_dir/fastq/${sample}_trimmed_bwaMeth_decon_summary.txt ]; then
 decon_res=$(Rscript -e "library(data.table);library(splitstackshape);decon_stats=cSplit(fread('$working_dir/fastq/${sample}_trimmed_bwaMeth_decon_summary.txt'),'V1',' ');decon_stats[,V4:=gsub('gi.*ref','',V1_2),];decon_stats_col=decon_stats[-1,][,sum(V1_1),by=V4];max_cont=as.character(decon_stats_col[which.max(V1),'V1',with=FALSE]);max_cont_sp=as.character(decon_stats_col[which.max(V1),'V4',with=FALSE]);cont=as.numeric(decon_stats[-1,sum(V1_1)]);cont_rat=cont/(cont+as.numeric(decon_stats[1,'V1_1',with=FALSE]));cat(paste0(c(max_cont_sp,max_cont,cont,cont_rat),collapse='\t'))")
@@ -116,9 +127,9 @@ fi
 
 
 if [ ! -f $summary_dir/summary.txt ]; then
-	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat" >$summary_dir/summary.txt
+	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\t$bases\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat" >$summary_dir/summary.txt
 fi
 
-echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$fragment_cov\t$decon_res" >>$summary_dir/summary.txt
+echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$bases_counts\t$fragment_cov\t$decon_res" >>$summary_dir/summary.txt
 
 done
