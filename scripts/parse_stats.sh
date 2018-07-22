@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #run this script on all species
-#for in_file in `ls $results_dir/*/meta/*.cfg`; do; ./parse_stats.sh $in_file; done
+#for in_file in `ls $results_dir/*/meta/*.cfg`; do ./parse_stats.sh $in_file; done
 
 if [ $# -eq 0 ]
 then
@@ -125,11 +125,18 @@ else
 decon_res="NA\tNA\tNA\tNA"
 fi
 
-
-if [ ! -f $summary_dir/summary.txt ]; then
-	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\t$bases\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat" >$summary_dir/summary.txt
+#blast species
+if [ -f $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats ]; then
+blast_res=`awk 'NR==1{$1=$1;sub(" ","\t");print}' $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats`
+else
+blast_res="NA\tNA"
 fi
 
-echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$bases_counts\t$fragment_cov\t$decon_res" >>$summary_dir/summary.txt
+
+if [ ! -f $summary_dir/summary.txt ]; then
+	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\t$bases\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat\tblast_count\tblast_species" >$summary_dir/summary.txt
+fi
+
+echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$bases_counts\t$fragment_cov\t$decon_res\t$blast_res" >>$summary_dir/summary.txt
 
 done
