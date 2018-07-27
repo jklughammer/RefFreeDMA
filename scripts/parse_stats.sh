@@ -127,14 +127,22 @@ fi
 
 #blast species
 if [ -f $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats ]; then
-blast_res=`awk 'NR==1{$1=$1;sub(" ","\t");print}' $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats`
+blast_res1=`awk 'NR==1{$1=$1;sub(" ","\t");print}' $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats`
+blast_res2=`awk 'NR==2{$1=$1;sub(" ","\t");print}' $working_dir/bisulfiteBlast_nt_conv/${sample}_unmapped-blast.stats`
+blast_res="$blast_res1\t$blast_res2"
+if [ "$blast_res1" == "" ];then
+blast_res="NA\tNA\tNA\tNA"
+fi
+if [ "$blast_res2" == "" ];then
+blast_res="$blast_res1\tNA\tNA"
+fi
 else
-blast_res="NA\tNA"
+blast_res="NA\tNA\tNA\tNA"
 fi
 
 
 if [ ! -f $summary_dir/summary.txt ]; then
-	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\t$bases\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat\tblast_count\tblast_species" >$summary_dir/summary.txt
+	echo -e "sample\tspecies\ttotal_reads\tmapped_reads\tmapping_efficiency\tinformative_reads\tCpG_meth\tavg_meth\tCpG_measurements\tcoveredCpGs\tconversionRate\tk1_unmeth\tk3_meth\ttotalMeasurements_k1\ttotalMeasurements_k3\ttotal_reads_untrimmed\t$motifs\t$bases\tfragments_ref\tfragments_uncovered\tfragments_uncovered_perc\tmax_cont_sp\tmax_cont\tcont\tcont_rat\tblast_count1\tblast_species1\tblast_count2\tblast_species2" >$summary_dir/summary.txt
 fi
 
 echo -e "$sample_name\t$species\t$total_reads\t$mapped_reads\t$mapping_eff\t$informative_reads\t$CpG_meth\t$avg_meth\t$CpGMeasurements\t$coveredCpGs\t$conversionRate\t$k1_unmeth\t$k3_meth\t$totalMeasurements_k1\t$totalMeasurements_k3\t$total_reads_untrimmed\t$counts\t$bases_counts\t$fragment_cov\t$decon_res\t$blast_res" >>$summary_dir/summary.txt
