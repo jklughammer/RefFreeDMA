@@ -129,15 +129,15 @@ if [ $decon = "TRUE" ];then
 	echo "Running in decontamination mode. This will take a lot of memory and most likely fail if run locally."
 	mem=100000
 	queue="longq"
-	time="2-00:00:00"
+	time="4-00:00:00"
 	if [ ! -s $decon_reference.bwameth.c2t.bwt ]; then
 	echo "Cound not find decon_reference. Exiting!"
 	exit 1
 	fi
 else
 	mem=6000
-	queue="shortq"
-	time="08:00:00"
+	queue="mediumq"
+	time="1-00:00:00"
 	decon_reference="NA"
 	bwameth_path="NA"
 fi
