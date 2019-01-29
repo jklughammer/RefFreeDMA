@@ -5,14 +5,29 @@
 
 
 #-----------------------LOAD_CONFIGURATION_START---------------
+crossmap=0
 if [ $# -eq 0 ]
 then
 	echo "Please pass the configuration file as parameter to RefFreeDMA.sh!"
 	exit 1
+elif [ $# -eq 1 ];then
+	#turn decontamination off by default (overwrite through configuration file)
+	decon=FALSE
+	source $1
+elif [ $# -eq 2 ];then
+	if [ $2 == "-c" ];then
+		echo "Running in crossmapping only mode."
+		crossmap=1
+		#turn decontamination off by default (overwrite through configuration file)
+		decon=FALSE
+		source $1
+	else
+		echo "Unrecognized second parameter. First parameter must be the configuration file. Second parameter can be -c to run in crossmap only mode."
+		exit 1
+	fi
+
 fi
-#turn decontamination off by default (overwrite through configuration file)
-decon=FALSE
-source $1
+
 
 if [ ! -n "$unconv_tag" ];then 
 	unconv_tag="no unconv_tag"
@@ -149,7 +164,7 @@ for file in `ls $bam_dir/*.bam`; do
 	sample=$(basename $file .bam)
 	sample=${sample/"$nameSeparator"/"__"}
 	echo $sample
-	if [ ! -s $working_dir/reduced/*${sample}_uniq.ref* ] ; then
+	if [ ! -s $working_dir/reduced/*${sample}_uniq.ref* ] && [ $crossmap -eq 0 ]; then
 		#create tempdir, sothat processes don't clash
 		tempdir=$working_dir/TEMP/$sample
 		mkdir -p $tempdir
@@ -170,7 +185,7 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 shopt -s extglob
-if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref*|wc -l` = $number_selected ] || [ ! `ls $working_dir/fastq/*_trimmed.fq|wc -l` = $count ]; then
+if [ ! `ls $working_dir/reduced/!(merged)_uniq.ref* 2>/dev/null|wc -l` = $number_selected ] || [ ! `ls $working_dir/fastq/*_trimmed.fq 2>/dev/null|wc -l` = $count ] && [ $crossmap -eq 0 ]; then
 	echo "Didn't find the expected number of uniq.ref files ($number_selected) or trimmed.fq files ($count). Exiting!"
 	exit 1
 fi
@@ -184,7 +199,7 @@ shopt -u extglob
 step="\n-------Noise reduction-------\n"
 count=0
 printf "$step"
-if [ ! -f $working_dir/reduced/merged_dupl.ref ]; then
+if [ ! -f $working_dir/reduced/merged_dupl.ref ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=noiseReduction --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/noiseReduction_%j.err -o $logdir/noiseReduction_%j.log $scripts/noiseReduction.sh $working_dir $filtLim $maxSamples $unconv_tag
 		((count++))
@@ -198,7 +213,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $working_dir/reduced/merged_dupl.ref ]; then
+if [ ! -s $working_dir/reduced/merged_dupl.ref ] && [ $crossmap -eq 0 ]; then
 	echo "Noise reduction failed. Exiting!"
 	exit 1
 fi
@@ -209,7 +224,7 @@ step="\n-------Basic consensus finding-------\n"
 printf "$step"
 
 count=0
-if [ `ls $working_dir/reduced/*collapse* 2>/dev/null|wc -l` -lt 1 ]; then
+if [ `ls $working_dir/reduced/*collapse* 2>/dev/null|wc -l` -lt 1 ] && [ $crossmap -eq 0 ]; then
 	
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=makePreConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/makePreConsensus_%j.err -o $logdir/makePreConsensus_%j.log $scripts/makePreConsensus.py $working_dir/reduced/merged_uniq.ref $maxReadLen $maxReadLen $working_dir $cLimit $unconv_tag
@@ -224,7 +239,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $working_dir/reduced/*collapse.fa ] || [ ! -s $working_dir/reduced/*collapse.fq ]; then
+if [ ! -s $working_dir/reduced/*collapse.fa ] || [ ! -s $working_dir/reduced/*collapse.fq ] && [ $crossmap -eq 0 ]; then
 	echo "Basic consensus finding failed. Exiting!"
 	exit 1
 fi
@@ -245,12 +260,12 @@ step="\n-------Map to self with Bowtie2-------\n"
 printf "$step"
 sample="merged_uniq_collapse"
 reduced_dir=$working_dir/reduced/
-ref_fasta=`ls $reduced_dir/*collapse.fa` || exit 1
-in_fastq=`ls $reduced_dir/*collapse.fq` || exit 1
-
 
 count=0
-if [ ! -f $reduced_dir/*_toSelf.sam ]; then
+if [ ! -f $reduced_dir/*_toSelf.sam ] && [ $crossmap -eq 0 ]; then
+	ref_fasta=`ls $reduced_dir/*collapse.fa` || exit 1
+	in_fastq=`ls $reduced_dir/*collapse.fq` || exit 1
+	
 	rm $working_dir/*.done 2>/dev/null
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=redToSelf --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/redToSelf_%j.err -o $logdir/redToSelf_%j.log $scripts/mapToSelf_bt2.sh $reduced_dir $ref_fasta $in_fastq $working_dir $bowtie2_path $nProcesses
@@ -266,7 +281,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $reduced_dir/*_toSelf.sam ]; then
+if [ ! -s $reduced_dir/*_toSelf.sam ] && [ $crossmap -eq 0 ]; then
 	echo "Map to self failed. Exiting!"
 	exit 1
 fi
@@ -275,7 +290,7 @@ fi
 step="\n-------MapToSelf filter-------\n"
 count=0
 printf "$step"
-if [ ! -f $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
+if [ ! -f $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=mapToSelf_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=6000 --partition=mediumq --time=1-00:00:00 -e $logdir/mapToSelf_filter_%j.err -o $logdir/mapToSelf_filter_%j.log $scripts/mapToSelf_filter.sh $in_fastq $reduced_dir $mapToSelf_filter $working_dir
 		((count++))
@@ -290,7 +305,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ]; then
+if [ ! -s $reduced_dir/toSelf_filtered_${mapToSelf_filter}mm ] && [ $crossmap -eq 0 ]; then
 	echo "Map to self filtering failed. Exiting!"
 	exit 1
 fi
@@ -302,7 +317,7 @@ sample=toSelf_filtered_${mapToSelf_filter}mm
 cons_dir=$reduced_dir/consensus/
 mkdir -p $cons_dir
 count=0
-if [ ! -f $cons_dir/toSelf_*_final ]; then
+if [ ! -f $cons_dir/toSelf_*_final ] && [ $crossmap -eq 0 ]; then
 	rm $working_dir/*.done 2>/dev/null
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=makeConsensus --ntasks=1 --cpus-per-task=1 --mem-per-cpu=90000 --partition=mediumq --time=42:00:00 -e $logdir/makeConsensus_%j.err -o $logdir/makeConsensus_%j.log $scripts/makeFinalConsensus.R $sample $cons_dir $reduced_dir $working_dir $consensus_dist $cLimit
@@ -318,7 +333,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $cons_dir/toSelf_*_final ]; then
+if [ ! -s $cons_dir/toSelf_*_final ] && [ $crossmap -eq 0 ]; then
 	echo "Accurate consensus finding failed. Exiting!"
 	exit 1
 fi
@@ -327,7 +342,7 @@ fi
 step="\n-------Identify potential reverse complements-------\n"
 count=0
 printf "$step"
-if [ ! -f $cons_dir/${sample}_final_rc ]; then
+if [ ! -f $cons_dir/${sample}_final_rc ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=findRevComp_filter --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/findRevComp_%j.err -o $logdir/findRevComp_%j.log $scripts/findRevComp.sh $cons_dir $sample $working_dir $restrictionSites
 		((count++))
@@ -341,7 +356,7 @@ if [ ! $count = 0 ]; then
 	wait_for_slurm $wait_time $count $working_dir
 fi
 
-if [ ! -s $cons_dir/${sample}_final_rc ]; then
+if [ ! -s $cons_dir/${sample}_final_rc ] && [ $crossmap -eq 0 ]; then
 	echo "Identifying potential reverese complements failed. Exiting!"
 	exit 1
 fi
@@ -349,7 +364,7 @@ fi
 step="\n-------Merge reverse complements-------\n"
 count=0
 printf "$step"
-if [ ! -f $cons_dir/${sample}_final_rc-res ]; then
+if [ ! -f $cons_dir/${sample}_final_rc-res ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=mergeRevComp --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e $logdir/mergeRevComp_%j.err -o $logdir/mergeRevComp_%j.log $scripts/mergeRevComp.py $cons_dir/${sample}_final_rc $working_dir
 		((count++))
@@ -365,7 +380,7 @@ else
 	echo "${sample}_final_rc-res exists. Skipping!"
 fi	
 
-if [ ! -s $cons_dir/${sample}_final_rc-res ]; then
+if [ ! -s $cons_dir/${sample}_final_rc-res ] && [ $crossmap -eq 0 ]; then
 	echo "Merging potential reverese complements failed. Exiting!"
 	exit 1
 fi
@@ -374,7 +389,7 @@ fi
 step="\n-------Concatenating deduced genome fragments-------\n"
 count=0
 printf "$step"
-if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
+if [ ! -f $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=concatenateRef --ntasks=1 --cpus-per-task=1 --mem-per-cpu=10000 --partition=shortq --time=08:00:00 -e $logdir/concatenateRef_%j.err -o $logdir/concatenateRef_%j.log $scripts/concatenateRef.py $cons_dir/${sample}_final_norc $maxReadLen $working_dir
 		((count++))
@@ -395,7 +410,7 @@ else
 	echo "${sample}_final_concat.fa exists. Skipping!"
 fi
 
-if [ ! -s $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ]; then
+if [ ! -s $cons_dir/${sample}_final_concat/${sample}_final_concat.fa ] && [ $crossmap -eq 0 ]; then
 	echo "Concatenating failed. Exiting!"
 	exit 1
 fi
@@ -428,7 +443,7 @@ if [ ! $cross_genome_fa = "-" ]; then
 	step="\n-------Sample Cross mapping to $cross_genome_id-------\n"
 	printf "$step"
 	
-	for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
+	for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq 2>/dev/null`; do
 	run_sample=$(basename $unmapped_fastq .fq)
 	run_sample=${run_sample//_trimmed/}
 	echo $run_sample
@@ -456,11 +471,11 @@ ref_genome_fasta=$working_dir/reduced/consensus/$genome_id/$genome_id.fa
 count=0
 submitted=0
 rm $working_dir/*.done 2>/dev/null
-for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq`; do
+for unmapped_fastq in `ls $working_dir/fastq/*trimmed.fq 2>/dev/null`; do
 	sample=$(basename $unmapped_fastq .fq)
 	sample=${sample//_trimmed/}
 	echo $sample
-	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed* ]; then
+	if [ ! -f $working_dir/$genome_id/$sample/biseqMethcalling/*cpgMethylation*.bed* ] && [ $crossmap -eq 0 ]; then
 		echo submitted
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=meth_calling_$sample --ntasks=1 --cpus-per-task=$nProcesses --mem-per-cpu=8000 --partition=mediumq --time=2-00:00:00 -e "$logdir/meth_calling_${sample}_%j.err" -o "$logdir/meth_calling_${sample}_%j.log" $scripts/getMeth_deduced.sh $working_dir $unmapped_fastq $ref_genome_fasta $genome_id $sample $samtools_path $bsmap_path $biseq_path $nProcesses $nonCpG $scripts $bedtools_path
@@ -478,18 +493,18 @@ if [ ! $submitted = 0 ]; then
 	wait_for_slurm $wait_time $submitted $working_dir
 fi
 
-if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed*|wc -l` = $count ]; then
+if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cpgMethylation*.bed*|wc -l` = $count ] && [ $crossmap -eq 0 ]; then
 	echo "Didn't find the expected number of cpgMethylation.bed files ($count). Exiting!"
 	exit 1
 fi
 
 fail=0
 if [ $nonCpG = "TRUE" ]; then
-	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphpgMethylation*.bed*|wc -l` = $count ]; then
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphpgMethylation*.bed*|wc -l` = $count ] && [ $crossmap -eq 0 ]; then
 		echo "Didn't find the expected number of cphpgMethylation.bed files ($count). Exiting!"
 		fail=1
 	fi
-	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphphMethylation*.bed*|wc -l` = $count ]; then
+	if [ ! `ls $working_dir/$genome_id/*/biseqMethcalling/*cphphMethylation*.bed*|wc -l` = $count ] && [ $crossmap -eq 0 ]; then
 		echo "Didn't find the expected number of cphphMethylation.bed files ($count). Exiting!"
 		fail=1
 	fi
@@ -513,7 +528,7 @@ for aligned_bam in `ls $working_dir/$genome_id/*/*.bam`; do
 	echo $run_sample
 	PDR_bed=$working_dir/$genome_id/$sample/${run_sample}_PDR.bed
 	echo $PDR_bed
-	if [ ! -s $PDR_bed ]; then
+	if [ ! -s $PDR_bed ] && [ $crossmap -eq 0 ]; then
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=PDR_$run_sample --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4000 --partition=shortq --time=08:00:00 -e "$logdir/PDR_${run_sample}_%j.err" -o "$logdir/PDR_${run_sample}_%j.log" $scripts/bisulfiteReadConcordanceAnalysis.py --infile=$aligned_bam  --outfile=$PDR_bed --skipHeaderLines=0 --genome=$genome_id --genomeDir=$genome_dir --samtools=$samtools_path
 		else
@@ -540,7 +555,7 @@ step="\n-------Differential methylation analysis for gpg motifs-------\n"
 printf "$step"
 ((count++))
 motif="cpg"
-if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ] && [ $crossmap -eq 0 ]; then
 	if [ $parallel = "TRUE" ]; then
 		sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 		((submitted++))
@@ -557,7 +572,7 @@ if [ $nonCpG = "TRUE" ]; then
 	printf "$step"
 	((count++))
 	motif="cphpg"
-	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ] && [ $crossmap -eq 0 ]; then
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 			((submitted++))		
@@ -572,7 +587,7 @@ if [ $nonCpG = "TRUE" ]; then
 	printf "$step"
 	((count++))
 	motif="cphph"
-	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ]; then
+	if [ ! -f $working_dir/$genome_id/diffMeth_$motif/*_diff_meth.tsv ] && [ $crossmap -eq 0 ]; then
 		if [ $parallel = "TRUE" ]; then
 			sbatch --export=ALL --get-user-env --job-name=diffMeth --ntasks=1 --cpus-per-task=1 --mem-per-cpu=50000 --partition=shortq --time=12:00:00 -e "$logdir/diffMeth_${motif}_%j.err" -o "$logdir/diffMeth_${motif}_%j.log" $scripts/diffMeth.R $working_dir $genome_id $species $genome_id $sample_annotation $compCol $groupsCol $nTopDiffMeth $scripts $motif $unconv_tag
 			((submitted++))	
@@ -590,7 +605,7 @@ if [ ! $submitted = 0 ]; then
 	fi
 rm $working_dir/*.done 2>/dev/null
 
-if [ ! `ls $working_dir/$genome_id/diffMeth_*/*_diff_meth.tsv|wc -l` = $count ]; then
+if [ ! `ls $working_dir/$genome_id/diffMeth_*/*_diff_meth.tsv|wc -l` = $count ] && [ $crossmap -eq 0 ]; then
 	echo "Differential methylation analysis failed. Didn't find the expected number of diff_meth.tsv files ($count). Exiting!"
 	exit 1
 fi
