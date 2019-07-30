@@ -249,7 +249,7 @@ working_dir
 |   |   └── biseqMethcalling
 |   ├── ...
 |   └── **diffMeth**
-|   	├── diff_meth.tsv
+|	    ├── diff_meth.tsv
 |	    ├── diff_meth_CpG.tsv
 |	    ├── mean_meth.tsv
 |	    └── plots.pdf
@@ -257,4 +257,63 @@ working_dir
     ├── Sample1.bam
     └── ...
 ```
+
+### Output statistics
+#### Comprehensive statistics
+Produced by running: 
+```
+./scripts/parse_stats.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
+```
+**summary.txt** contains all relevant stats concerning each of the samples.\
+**ref_summary.txt** contains relative stats concerning the deduced reference, which is common across all samples. 
+
+#### Header description for summary.txt
+header|description
+------|-------------------
+sample|given sample name
+species|given species name
+total_reads|number of reads after trimming
+mapped_reads|number of mapped reads
+mapping_efficiency|% mapped reads
+informative_reads|number of qc pass reads with at least 1 motif
+CpG_meth|average across all motif methylation values 
+avg_meth|read weighted methylation average across all motifs
+CpG_measurements|number of times the motif has been detected
+coveredCpGs|number of unique motif positions 
+conversionRate|based on non-CpG methylation
+k1_unmeth|underconversion rate based on spike-in (protocol specific)
+k3_meth|overconversion rate based on spike-in (protocol specific)
+totalMeasurements_k1|number of k1 measurements
+totalMeasurements_k3|number of k3 measurements
+total_reads_untrimmed|number of reads before trimming
+\[CT\]GG|number or reads starting with the restriction site (analogous for other restriction sites)
+CGG|% reads starting with a methylated restriction site (analogous for other restriction sites)
+TGG|% reads starting with a unmethylated restriction site (analogous for other restriction sites)
+others|% reads not starting with a restriction site (indicating pre-fragmentation)
+all_bases|number of sequenced bases in the input bam file
+As|number of Adenines in the input bam file
+Ts|number of Thymines in the input bam file
+Cs|number of Cytosines in the input bam file
+Gs|number of Guanines in the input bam file
+Ns|number of Ns in the input bam file
+perc_As|% Adenines in the input bam file
+perc_Ts|% Thymines in the input bam file
+perc_Cs|% Cytosines in the input bam file
+perc_Gs|% Guanines in the input bam file
+perc_Ns|% Ns in the input bam file
+fragments_ref|number of deduced reference fragments
+fragments_uncovered|number of deduced reference fragments that are NOT covered by this sample
+fragments_uncovered_perc|% deduced reference fragments that are NOT covered by this sample
+max_cont_sp|ncbi ID of species that contributes most to contamination (only if decontamination is run)
+max_cont|number of reads assigned to max_cont_sp (only available if decontamination is run)
+cont|total number of reads identified as contaminating (only available if decontamination is run)
+cont_rat|fraction of reads identified as contaminating (only available if decontamination is run)
+blast_count1|number of reads assigned to the most frequent blast hit (only available if bisulfite blast is run)
+blast_species1|most frequent blast hit species (only available if bisulfite blast is run)
+blast_count2|number of reads assigned to the second most frequent blast hit (only available if bisulfite blast is run)
+blast_species2|second most frequent blast hit species (only available if bisulfite blast is run)
+
+#### Methylation calling specific statistics
+Produced automatically: toSelf_filtered_XXX_final_concat/RRBS_biseq_statistics.txt contains detailed methylation calling statistics produced by the biseqMethCalling.py script. Header descriptions can be found within the script [here](https://github.com/jklughammer/RefFreeDMA/blob/8cfcf83464e6d25e0f7c29e22bb6d7679c2801f3/scripts/biseqMethCalling.py#L2081)
+
 
