@@ -265,7 +265,7 @@ Produced by running:
 ./scripts/parse_stats.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
 ```
 **summary.txt** contains all relevant stats concerning each of the samples.\
-**ref_summary.txt** contains relative stats concerning the deduced reference, which is common across all samples. 
+**ref_summary.txt** contains relevant stats concerning the deduced reference, which is common across all samples. 
 
 #### Header description for summary.txt
 header|description
