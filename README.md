@@ -281,8 +281,8 @@ avg_meth|read weighted methylation average across all motifs
 CpG_measurements|number of times the motif has been detected
 coveredCpGs|number of unique motif positions 
 conversionRate|based on non-CpG methylation
-k1_unmeth|underconversion rate based on spike-in (protocol specific)
-k3_meth|overconversion rate based on spike-in (protocol specific)
+k1_unmeth|underconversion rate based on spike-in (RRBS protocol specific)
+k3_meth|overconversion rate based on spike-in (RRBS protocol specific)
 totalMeasurements_k1|number of k1 measurements
 totalMeasurements_k3|number of k3 measurements
 total_reads_untrimmed|number of reads before trimming
