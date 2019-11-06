@@ -11,8 +11,8 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 
 #### 7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
-2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
-3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
+2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
+3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
 4\. Edit the test configuration file (`RefFreeDMA_test/meta/RefFreeDMA_test.cfg`): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.  
 5\. Install the required [R packages](#r-packages) if needed.  
 6\. Run RefFreeDMA.sh.  
@@ -114,7 +114,7 @@ Input files are unmapped BAM files (one per sample). Input files have to be loca
 RefFreeDMA has so far been used and tested extensively only for the analysis of differential DNA methylation in CpG context. However, setting the [nonCpG parameter](#set-variable-parameters) to TRUE will make RefFreeDMA run the same analysis on Cs in CHH and CHG context as for Cs in CpG context. Two more output folders (diffMeth_cphph and diffMeth_cphpg) will be produced. This feature has been tested and validated on simulated data.
 
 ### Decontamination
-In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
+In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at//papers/klughammer2015/resources/RefFreeDMA/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
 
 Running RefFreeDMA
 ------------------
@@ -124,7 +124,7 @@ Running RefFreeDMA
 
 |parameter|explanation|
 |-----|-----------|
-|tool_path|Path to a directory containing all the need external software, e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/jklughammer/RefFreeDMA/tools.tar.gz)|
+|tool_path|Path to a directory containing all the need external software, e.g. the [tools.tar.gz](http://www.biomedical-sequencing.at/bocklab/papers/klughammer2015/resources/tools.tar.gz)|
 |picard_path|Needed for sam to fastq conversion|
 |trim_galore_path|Needed for read trimming|
 |cutadapt_path|Needed for read trimming|
