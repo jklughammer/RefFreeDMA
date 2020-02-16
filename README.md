@@ -257,6 +257,9 @@ working_dir
     ├── Sample1.bam
     └── ...
 ```
+### Differential DNA methylation results
+RefFreeDMA automatically outputs the nTopDiffMeth differentially methylated deduced reference fragments per group. The default for nTopDiffMeth is set to 500. Because p-values for single CpGs in a deduced reference fragment are combined irrespective of their direction of differential methylation, fragments can display very small or no differences between groups, while still having significant p-values. These heterogeneously differentially methylated regions are likely biologically different from the homogeneously differentially methylated ones and therefore should be analyzed separately.
+If the goal is to focus on homogeneously differentially methylated fragments, the number of nTopDiffMeth differentially methylated fragments should be reduced until heterogeneously differentially methylated regions are no longer selected.
 
 ### Output statistics
 #### Comprehensive statistics
