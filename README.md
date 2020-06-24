@@ -311,10 +311,10 @@ max_cont_sp|ncbi ID of species that contributes most to contamination (only if d
 max_cont|number of reads assigned to max_cont_sp (only available if decontamination is run)
 cont|total number of reads identified as contaminating (only available if decontamination is run)
 cont_rat|fraction of reads identified as contaminating (only available if decontamination is run)
-blast_count1|number of reads assigned to the most frequent blast hit (only available if bisulfite blast is run)
-blast_species1|most frequent blast hit species (only available if bisulfite blast is run)
-blast_count2|number of reads assigned to the second most frequent blast hit (only available if bisulfite blast is run)
-blast_species2|second most frequent blast hit species (only available if bisulfite blast is run)
+blast_count1|number of reads assigned to the most frequent blast hit (only available if [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) is run)
+blast_species1|most frequent blast hit species (only available if [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) is run)
+blast_count2|number of reads assigned to the second most frequent blast hit (only available if [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) is run)
+blast_species2|second most frequent blast hit species (only available if [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) is run)
 
 #### Methylation calling specific statistics
 Produced automatically: toSelf_filtered_XXX_final_concat/RRBS_biseq_statistics.txt contains detailed methylation calling statistics produced by the biseqMethCalling.py script. Header descriptions can be found within the script [here](https://github.com/jklughammer/RefFreeDMA/blob/8cfcf83464e6d25e0f7c29e22bb6d7679c2801f3/scripts/biseqMethCalling.py#L2081)
