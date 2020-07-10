@@ -270,8 +270,11 @@ Run the following steps in the indicated order.
 1. Run [RefFreeDMA](#running-reffreedma) with [decontamination](#decontamination) to get the basic results after removing microbial/viral sequences.
 2. Run [conversion control analysis](#conversion-controls) to check bisulfite conversion using spike-in sequences.
 3. Run [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) to verify species annotations.
-4. Run [parse stats](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/parse_stats.sh) to create summary and qc statistics.
-5. Run [cleanup](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/cleanup.sh) to delete and/or compress intermediate files.
+4. Run [parse stats](comprehensive-statistics) to create summary and qc statistics.
+5. Run [cleanup](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/cleanup.sh) to delete and/or compress intermediate files: 
+```
+./scripts/cleanup.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
+```
 
 ### Output statistics
 #### Comprehensive statistics
@@ -296,10 +299,10 @@ avg_meth|read weighted methylation average across all motifs
 CpG_measurements|number of times the motif has been detected
 coveredCpGs|number of unique motif positions 
 conversionRate|based on non-CpG methylation
-k1_unmeth|underconversion rate based on spike-in (RRBS protocol specific)
-k3_meth|overconversion rate based on spike-in (RRBS protocol specific)
-totalMeasurements_k1|number of k1 measurements
-totalMeasurements_k3|number of k3 measurements
+k1_unmeth|underconversion rate based on spike-in (RRBS protocol specific [conversion controls](#conversion-controls))
+k3_meth|overconversion rate based on spike-in (RRBS protocol specific  [conversion controls](#conversion-controls))
+totalMeasurements_k1|number of k1 measurements (RRBS protocol specific  [conversion controls](#conversion-controls))
+totalMeasurements_k3|number of k3 measurements (RRBS protocol specific  [conversion controls](#conversion-controls))
 total_reads_untrimmed|number of reads before trimming
 \[CT\]GG|number or reads starting with the restriction site (analogous for other restriction sites)
 CGG|% reads starting with a methylated restriction site (analogous for other restriction sites)
