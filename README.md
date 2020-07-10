@@ -270,7 +270,7 @@ Run the following steps in the indicated order.
 1. Run [RefFreeDMA](#running-reffreedma) with [decontamination](#decontamination) to get the basic results after removing microbial/viral sequences.
 2. Run [conversion control analysis](#conversion-controls) to check bisulfite conversion using spike-in sequences.
 3. Run [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) to verify species annotations.
-4. Run [parse stats](comprehensive-statistics) to create summary and qc statistics.
+4. Run [parse stats](#comprehensive-statistics) to create summary and qc statistics.
 5. Run [cleanup](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/cleanup.sh) to delete and/or compress intermediate files: 
 ```
 ./scripts/cleanup.sh PATH_TO_TESTDIR/RefFreeDMA_test/meta/RefFreeDMA_test.cfg
