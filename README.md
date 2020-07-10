@@ -116,6 +116,9 @@ RefFreeDMA has so far been used and tested extensively only for the analysis of 
 ### Decontamination
 In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at//papers/klughammer2015/resources/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
 
+### Conversion controls (RRBS protocol specific)
+Some RRBS protocols include methylated and unmethylated spike-in sequences to be used as conversion controls. They can be analyzed using this bundle of scripts [conversionCrt.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/conversionCrt.tar.gz). These scripts expect the environment modules `samtools/1.3`, `bismark/0.12.2`, and `bowtie/1.1.1`. These might need to be adapted to the respective environment. Other versions might not work.
+
 Running RefFreeDMA
 ------------------
 
