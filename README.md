@@ -116,7 +116,8 @@ RefFreeDMA has so far been used and tested extensively only for the analysis of 
 ### Decontamination
 In order to prevent contaminating sequences (originating from microbial species) from being included in the deduced genome and possibly affecting the analysis, RefFreeDMA offers an optional decontamination step. If activated, all reads are mapped to a decoy genome consisting of all sequences in the ncbi blast representative bacterial/archeal genomes database (ftp://ftp.ncbi.nlm.nih.gov/blast/db/Representative_Genomes.*tar.gz) plus the sequence of phiX174. Only reads that don't map to this decoy genome are included in further analysis. For each sample a summary of contaminating sequences as well as the bam file is reported in the fastq directory. To use this functionality the pre-indexed [decoy genome](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/decon_reference.tar.gz) (56GB) needs to be downloaded and extracted. The [necessary tools](#external-software) (bwa and bwa-meth) as well as the toolshed python library need to be installed or used from the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at//papers/klughammer2015/resources/tools.tar.gz)). And the respective [paths](#set-tool-paths) and [parameters](#adjust-default-parameters-if-required) need to be set in the configuration file.
 
-### Conversion controls (RRBS protocol specific)
+### Conversion controls
+**(RRBS protocol specific)**
 Some RRBS protocols include methylated and unmethylated spike-in sequences to be used as conversion controls. They can be analyzed using this bundle of scripts [conversionCtr.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/conversionCtr.tar.gz). These scripts expect the environment modules `samtools/1.3`, `bismark/0.12.2`, and `bowtie/1.1.1`. These might need to be adapted to the respective environment. Other versions might not work.
 
 Running RefFreeDMA
@@ -263,6 +264,14 @@ working_dir
 ### Differential DNA methylation results
 RefFreeDMA automatically outputs the nTopDiffMeth differentially methylated deduced reference fragments per group. The default for nTopDiffMeth is set to 500. Because p-values for single CpGs in a deduced reference fragment are combined irrespective of their direction of differential methylation, fragments can display very small or no differences between groups, while still having significant p-values. These heterogeneously differentially methylated regions are likely biologically different from the homogeneously differentially methylated ones and therefore should be analyzed separately.
 If the goal is to focus on homogeneously differentially methylated fragments, the number of nTopDiffMeth differentially methylated fragments should be reduced until heterogeneously differentially methylated regions are no longer selected.
+
+### Running RefFreeDMA and all auxillary analysis (most comprehensive)
+Run the following steps in the indicated order.
+1. Run [RefFreeDMA](#running-reffreedma) with [decontamination](#decontamination) to get the basic results after removing microbial/viral sequences.
+2. Run [conversion control analysis](#conversion-controls) to check bisulfite conversion using spike-in sequences.
+3. Run [bisulfiteBlast](https://github.com/jklughammer/bisulfiteBlast) to verify species annotations.
+4. Run [parse stats](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/parse_stats.sh) to create summary and qc statistics.
+5. Run [cleanup](https://github.com/jklughammer/RefFreeDMA/blob/master/scripts/cleanup.sh) to delete and/or compress intermediate files.
 
 ### Output statistics
 #### Comprehensive statistics
