@@ -11,8 +11,8 @@ __Note:__ The following steps will run RefFreeDMA in linear mode on a small samp
 
 #### 7 steps to test RefFreeDMA:
 1\. Download this repository as ZIP or clone it.  
-2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
-3\. Either download and extract the external software bundle ([tools.tar.gz](http://www.biomedical-sequencing.at/bocklab//papers/klughammer2015/resources/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
+2\. Download and extract the test data set ([RefFreeDMA_test.tar.gz](https://www.medical-epigenomics.org/papers/klughammer2015/resources/RefFreeDMA_test.tar.gz)): `tar -xzf RefFreeDMA_test.tar.gz`.  
+3\. Either download and extract the external software bundle ([tools.tar.gz](https://www.medical-epigenomics.org/papers/klughammer2015/resources/tools.tar.gz)*): `tar -xzf tools.tar.gz` or manually install the required [external software](#external-software).  
 4\. Edit the test configuration file (`RefFreeDMA_test/meta/RefFreeDMA_test.cfg`): set YOUR_TOOLS_PATH and PATH_TO_TESTDIR.  
 5\. Install the required [R packages](#r-packages) if needed.  
 6\. Run RefFreeDMA.sh.  
